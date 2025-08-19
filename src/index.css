@@ -1,22 +1,8 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 /* Optional: Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
-body {
-  font-family: 'Poppins', sans-serif;
+:root {
+  font-family: "Poppins", sans-serif;
 }
-
-/* Fade-in animation for sections */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.animate-fadeIn {
-  animation: fadeIn 0.8s ease forwards;
-}
-.animate-fadeIn.delay-200 { animation-delay: 0.2s; }
-.animate-fadeIn.delay-400 { animation-delay: 0.4s; }
