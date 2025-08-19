@@ -1,116 +1,148 @@
-import React, { useState } from 'react'
-import { Navigate, Link } from 'react-router-dom'
-import { doSignInWithEmailAndPassword, doSignInWithGoogle } from '../../../firebase/auth'
-import { useAuth } from '../../../contexts/authContext'
+import React, { useState, useEffect } from "react";
+import { Navigate, Link } from "react-router-dom";
+import { getAuth, signOut } from "firebase/auth";
+import { doSignInWithEmailAndPassword, doSignInWithGoogle } from "../../../firebase/auth";
+import { useAuth } from "../../../contexts/authContext";
+import Navbar from "../../Navbar"; // Using your Navbar
+import { Mail, Lock } from "lucide-react";
 
 const Login = () => {
-    const { userLoggedIn } = useAuth()
+  const { userLoggedIn } = useAuth();
+  const auth = getAuth();
 
-    const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
-    const [isSigningIn, setIsSigningIn] = useState(false)
-    const [errorMessage, setErrorMessage] = useState('')
+  // Log out any previous session
+  useEffect(() => {
+    signOut(auth)
+      .then(() => console.log("Previous session logged out"))
+      .catch((err) => console.log("Error logging out:", err));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    const onSubmit = async (e) => {
-        e.preventDefault()
-        if(!isSigningIn) {
-            setIsSigningIn(true)
-            await doSignInWithEmailAndPassword(email, password)
-            // doSendEmailVerification()
-        }
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    if (!isSigningIn) {
+      setIsSigningIn(true);
+      await doSignInWithEmailAndPassword(email, password).catch((err) => {
+        setErrorMessage(err.message);
+        setIsSigningIn(false);
+      });
     }
+  };
 
-    const onGoogleSignIn = (e) => {
-        e.preventDefault()
-        if (!isSigningIn) {
-            setIsSigningIn(true)
-            doSignInWithGoogle().catch(err => {
-                setIsSigningIn(false)
-            })
-        }
+  const onGoogleSignIn = (e) => {
+    e.preventDefault();
+    if (!isSigningIn) {
+      setIsSigningIn(true);
+      doSignInWithGoogle().catch((err) => {
+        setErrorMessage(err.message);
+        setIsSigningIn(false);
+      });
     }
+  };
 
-    return (
-        <div>
-            {userLoggedIn && (<Navigate to={'/home'} replace={true} />)}
+  // Redirect if logged in
+  if (userLoggedIn) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
-            <main className="w-full h-screen flex self-center place-content-center place-items-center">
-                <div className="w-96 text-gray-600 space-y-5 p-4 shadow-xl border rounded-xl">
-                    <div className="text-center">
-                        <div className="mt-2">
-                            <h3 className="text-gray-800 text-xl font-semibold sm:text-2xl">Welcome Back</h3>
-                        </div>
-                    </div>
-                    <form
-                        onSubmit={onSubmit}
-                        className="space-y-5"
-                    >
-                        <div>
-                            <label className="text-sm text-gray-600 font-bold">
-                                Email
-                            </label>
-                            <input
-                                type="email"
-                                autoComplete='email'
-                                required
-                                value={email} onChange={(e) => { setEmail(e.target.value) }}
-                                className="w-full mt-2 px-3 py-2 text-gray-500 bg-transparent outline-none border focus:border-indigo-600 shadow-sm rounded-lg transition duration-300"
-                            />
-                        </div>
+  return (
+    <div className="relative min-h-screen bg-black">
+      {/* Navbar */}
+      <Navbar />
 
+      {/* Login Card */}
+      <main className="flex items-center justify-center h-[calc(100vh-80px)] px-4">
+        <div className="w-full max-w-md p-8 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-2xl">
+          <h3 className="text-white text-2xl font-bold text-center">Welcome Back</h3>
+          <p className="text-gray-400 text-center mb-6">Login to continue</p>
 
-                        <div>
-                            <label className="text-sm text-gray-600 font-bold">
-                                Password
-                            </label>
-                            <input
-                                type="password"
-                                autoComplete='current-password'
-                                required
-                                value={password} onChange={(e) => { setPassword(e.target.value) }}
-                                className="w-full mt-2 px-3 py-2 text-gray-500 bg-transparent outline-none border focus:border-indigo-600 shadow-sm rounded-lg transition duration-300"
-                            />
-                        </div>
+          <form onSubmit={onSubmit} className="space-y-5">
+            {/* Email */}
+            <div className="relative">
+              <label className="text-sm text-gray-300 font-bold">Email</label>
+              <div className="flex items-center mt-2 bg-black/30 border border-white/20 rounded-lg px-3 py-2">
+                <Mail className="w-5 h-5 text-gray-400 mr-2" />
+                <input
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-transparent text-white placeholder-gray-400 outline-none"
+                  placeholder="Enter your email"
+                />
+              </div>
+            </div>
 
-                        {errorMessage && (
-                            <span className='text-red-600 font-bold'>{errorMessage}</span>
-                        )}
+            {/* Password */}
+            <div className="relative">
+              <label className="text-sm text-gray-300 font-bold">Password</label>
+              <div className="flex items-center mt-2 bg-black/30 border border-white/20 rounded-lg px-3 py-2">
+                <Lock className="w-5 h-5 text-gray-400 mr-2" />
+                <input
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-transparent text-white placeholder-gray-400 outline-none"
+                  placeholder="Enter your password"
+                />
+              </div>
+            </div>
 
-                        <button
-                            type="submit"
-                            disabled={isSigningIn}
-                            className={`w-full px-4 py-2 text-white font-medium rounded-lg ${isSigningIn ? 'bg-gray-300 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 hover:shadow-xl transition duration-300'}`}
-                        >
-                            {isSigningIn ? 'Signing In...' : 'Sign In'}
-                        </button>
-                    </form>
-                    <p className="text-center text-sm">Don't have an account? <Link to={'/register'} className="hover:underline font-bold">Sign up</Link></p>
-                    <div className='flex flex-row text-center w-full'>
-                        <div className='border-b-2 mb-2.5 mr-2 w-full'></div><div className='text-sm font-bold w-fit'>OR</div><div className='border-b-2 mb-2.5 ml-2 w-full'></div>
-                    </div>
-                    <button
-                        disabled={isSigningIn}
-                        onClick={(e) => { onGoogleSignIn(e) }}
-                        className={`w-full flex items-center justify-center gap-x-3 py-2.5 border rounded-lg text-sm font-medium  ${isSigningIn ? 'cursor-not-allowed' : 'hover:bg-gray-100 transition duration-300 active:bg-gray-100'}`}>
-                        <svg className="w-5 h-5" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <g clipPath="url(#clip0_17_40)">
-                                <path d="M47.532 24.5528C47.532 22.9214 47.3997 21.2811 47.1175 19.6761H24.48V28.9181H37.4434C36.9055 31.8988 35.177 34.5356 32.6461 36.2111V42.2078H40.3801C44.9217 38.0278 47.532 31.8547 47.532 24.5528Z" fill="#4285F4" />
-                                <path d="M24.48 48.0016C30.9529 48.0016 36.4116 45.8764 40.3888 42.2078L32.6549 36.2111C30.5031 37.675 27.7252 38.5039 24.4888 38.5039C18.2275 38.5039 12.9187 34.2798 11.0139 28.6006H3.03296V34.7825C7.10718 42.8868 15.4056 48.0016 24.48 48.0016Z" fill="#34A853" />
-                                <path d="M11.0051 28.6006C9.99973 25.6199 9.99973 22.3922 11.0051 19.4115V13.2296H3.03298C-0.371021 20.0112 -0.371021 28.0009 3.03298 34.7825L11.0051 28.6006Z" fill="#FBBC04" />
-                                <path d="M24.48 9.49932C27.9016 9.44641 31.2086 10.7339 33.6866 13.0973L40.5387 6.24523C36.2 2.17101 30.4414 -0.068932 24.48 0.00161733C15.4055 0.00161733 7.10718 5.11644 3.03296 13.2296L11.005 19.4115C12.901 13.7235 18.2187 9.49932 24.48 9.49932Z" fill="#EA4335" />
-                            </g>
-                            <defs>
-                                <clipPath id="clip0_17_40">
-                                    <rect width="48" height="48" fill="white" />
-                                </clipPath>
-                            </defs>
-                        </svg>
-                        {isSigningIn ? 'Signing In...' : 'Continue with Google'}
-                    </button>
-                </div>
-            </main>
+            {errorMessage && <span className="text-red-500 font-medium">{errorMessage}</span>}
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={isSigningIn}
+              className={`w-full px-4 py-2 text-white font-semibold rounded-lg transition-all duration-300 ${
+                isSigningIn ? "bg-gray-500 cursor-not-allowed" : "bg-orange-600 hover:bg-orange-700 hover:shadow-lg"
+              }`}
+            >
+              {isSigningIn ? "Signing In..." : "Sign In"}
+            </button>
+          </form>
+
+          {/* Register link */}
+          <p className="text-center text-sm text-gray-400 mt-4">
+            Don't have an account?{" "}
+            <Link to="/register" className="text-orange-400 hover:underline font-bold">
+              Sign up
+            </Link>
+          </p>
+
+          {/* Divider */}
+          <div className="flex items-center my-6">
+            <div className="flex-grow border-t border-gray-500"></div>
+            <span className="mx-2 text-gray-400 text-sm font-bold">OR</span>
+            <div className="flex-grow border-t border-gray-500"></div>
+          </div>
+
+          {/* Google Sign In */}
+          <button
+            disabled={isSigningIn}
+            onClick={onGoogleSignIn}
+            className="w-full flex items-center justify-center gap-x-3 py-2.5 bg-white/10 border border-white/20 rounded-lg text-white font-medium hover:bg-white/20 transition duration-300"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 48 48" fill="none">
+              <path d="M47.5 24.55c0-1.63-.13-3.27-.41-4.87H24.48v9.24h12.96c-.54 2.98-2.27 5.61-4.8 7.29v5.99h7.74c4.54-4.18 7.14-10.35 7.14-17.65Z" fill="#4285F4" />
+              <path d="M24.48 48c6.47 0 11.93-2.13 15.9-5.79l-7.73-5.99c-2.16 1.46-4.94 2.29-8.17 2.29-6.25 0-11.54-4.23-13.46-9.91H3.03v6.18C7.1 42.9 15.41 48 24.48 48Z" fill="#34A853" />
+              <path d="M11 28.6c-1-2.98-1-6.2 0-9.19V13.23H3.03c-3.4 6.78-3.4 15.77 0 22.56L11 28.6Z" fill="#FBBC04" />
+              <path d="M24.48 9.5c3.42 0 6.74 1.18 9.34 3.5l7.76-7.25C36.2 2.17 30.44-.07 24.48 0 15.4 0 7.1 5.12 3.03 13.23l7.96 6.18C12.9 13.72 18.22 9.5 24.48 9.5Z" fill="#EA4335" />
+            </svg>
+            {isSigningIn ? "Signing In..." : "Continue with Google"}
+          </button>
         </div>
-    )
-}
+      </main>
+    </div>
+  );
+};
 
-export default Login
+export default Login;

@@ -22,6 +22,11 @@ export const doSignInWithEmailAndPassword = async (email, password) => {
 // Sign in with Google
 export const doSignInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
+    // This forces Google to always ask which account to use
+    provider.setCustomParameters({
+        prompt: 'select_account'
+    });
+
     const result = await signInWithPopup(auth, provider);
     return result.user;
 };

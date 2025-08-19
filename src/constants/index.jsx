@@ -1,9 +1,9 @@
-import { BotMessageSquare } from "lucide-react";
-import { BatteryCharging } from "lucide-react";
-import { Fingerprint } from "lucide-react";
-import { ShieldHalf } from "lucide-react";
-import { PlugZap } from "lucide-react";
-import { GlobeLock } from "lucide-react";
+import { ListPlus } from "lucide-react";
+import { Smartphone } from "lucide-react";
+import { FileText } from "lucide-react";
+import { Eye } from "lucide-react";
+import { Users } from "lucide-react";
+import { BarChart2 } from "lucide-react";
 
 import user1 from "../assets/profile-pictures/user1.jpg";
 import user2 from "../assets/profile-pictures/user2.jpg";
@@ -13,166 +13,171 @@ import user5 from "../assets/profile-pictures/user5.jpg";
 import user6 from "../assets/profile-pictures/user6.jpg";
 
 export const navItems = [
-  { label: "Features", href: "#" },
-  { label: "Workflow", href: "#" },
-  { label: "Pricing", href: "#" },
-  { label: "Testimonials", href: "#" },
+  { label: "Features", href: "#features" },
+  { label: "Workflow", href: "#workflow" },
+  { label: "Testimonials", href: "#testimonials" },
 ];
+
 
 export const testimonials = [
   {
-    user: "John Doe",
-    company: "Stellar Solutions",
+    user: "Alex Thompson",
+    company: "Freelancer",
     image: user1,
-    text: "I am extremely satisfied with the services provided. The team was responsive, professional, and delivered results beyond my expectations.",
+    text: "Linkly made sharing all my online profiles effortless. My followers love having one place to find everything!",
   },
   {
-    user: "Jane Smith",
-    company: "Blue Horizon Technologies",
+    user: "Sofia Martinez",
+    company: "Content Creator",
     image: user2,
-    text: "I couldn't be happier with the outcome of our project. The team's creativity and problem-solving skills were instrumental in bringing our vision to life",
+    text: "I love how easy it is to customize my Linkly page. It looks professional and works perfectly for my audience.",
   },
   {
-    user: "David Johnson",
-    company: "Quantum Innovations",
+    user: "Ryan Lee",
+    company: "Startup Founder",
     image: user3,
-    text: "Working with this company was a pleasure. Their attention to detail and commitment to excellence are commendable. I would highly recommend them to anyone looking for top-notch service.",
+    text: "The analytics feature is a game-changer. I can track clicks and understand my audience like never before.",
   },
   {
-    user: "Ronee Brown",
-    company: "Fusion Dynamics",
+    user: "Maya Patel",
+    company: "Blogger",
     image: user4,
-    text: "Working with the team at XYZ Company was a game-changer for our project. Their attention to detail and innovative solutions helped us achieve our goals faster than we thought possible. We are grateful for their expertise and professionalism!",
+    text: "Adding and organizing links is so simple. My readers can now access everything from one clean link!",
   },
   {
-    user: "Michael Wilson",
-    company: "Visionary Creations",
+    user: "Ethan Brooks",
+    company: "Digital Artist",
     image: user5,
-    text: "I am amazed by the level of professionalism and dedication shown by the team. They were able to exceed our expectations and deliver outstanding results.",
+    text: "Linkly helped me present all my work professionally. It's fast, intuitive, and my followers love it.",
   },
   {
-    user: "Emily Davis",
-    company: "Synergy Systems",
+    user: "Lily Nguyen",
+    company: "Influencer",
     image: user6,
-    text: "The team went above and beyond to ensure our project was a success. Their expertise and dedication are unmatched. I look forward to working with them again in the future.",
+    text: "The free tier is amazing, and upgrading to Pro was worth every penny. I can now share multiple pages and track engagement easily.",
   },
 ];
+
+
 
 export const features = [
   {
-    icon: <BotMessageSquare />,
+    icon: <ListPlus />,
     text: "Drag-and-Drop Interface",
     description:
-      "Easily design and arrange your VR environments with a user-friendly drag-and-drop interface.",
+      "Easily organize and arrange your links with a simple drag-and-drop interface.",
   },
   {
-    icon: <Fingerprint />,
+    icon: <Smartphone />,
     text: "Multi-Platform Compatibility",
     description:
-      "Build VR applications that run seamlessly across multiple platforms, including mobile, desktop, and VR headsets.",
+      "Access and share your Linkly on any device—mobile, desktop, or tablet—without extra setup.",
   },
   {
-    icon: <ShieldHalf />,
+    icon: <FileText />,
     text: "Built-in Templates",
     description:
-      "Jumpstart your VR projects with a variety of built-in templates for different types of applications and environments.",
+      "Get started quickly with ready-to-use templates for portfolios, social profiles, or business links.",
   },
   {
-    icon: <BatteryCharging />,
+    icon: <Eye />,
     text: "Real-Time Preview",
     description:
-      "Preview your VR application in real-time as you make changes, allowing for quick iterations and adjustments.",
+      "See your Linkly update instantly as you add or edit links, so you know exactly how it will look.",
   },
   {
-    icon: <PlugZap />,
+    icon: <Users />,
     text: "Collaboration Tools",
     description:
-      "Work together with your team in real-time on VR projects, enabling seamless collaboration and idea sharing.",
+      "Share editing access with friends or teammates to build your Linkly together in real time.",
   },
   {
-    icon: <GlobeLock />,
+    icon: <BarChart2 />,
     text: "Analytics Dashboard",
     description:
-      "Gain valuable insights into user interactions and behavior within your VR applications with an integrated analytics dashboard.",
+      "Track clicks, visits, and interactions on your Linkly to understand what works best.",
+  },
+];
+export const checklistItems = [
+  {
+    title: "Organize links effortlessly",
+    description:
+      "Drag, arrange, and categorize all your links in one place for quick access.",
+  },
+  {
+    title: "Preview links instantly",
+    description:
+      "See your changes in real-time as you add or edit links, so it always looks perfect.",
+  },
+  {
+    title: "AI-powered suggestions",
+    description:
+      "Get smart recommendations to optimize your links and improve engagement.",
+  },
+  {
+    title: "Share your Linkly in seconds",
+    description:
+      "Generate a single clean link to share across social media or with friends.",
   },
 ];
 
-export const checklistItems = [
-  {
-    title: "Code merge made easy",
-    description:
-      "Track the performance of your VR apps and gain insights into user behavior.",
-  },
-  {
-    title: "Review code without worry",
-    description:
-      "Track the performance of your VR apps and gain insights into user behavior.",
-  },
-  {
-    title: "AI Assistance to reduce time",
-    description:
-      "Track the performance of your VR apps and gain insights into user behavior.",
-  },
-  {
-    title: "Share work in minutes",
-    description:
-      "Track the performance of your VR apps and gain insights into user behavior.",
-  },
-];
 
 export const pricingOptions = [
   {
     title: "Free",
     price: "$0",
     features: [
-      "Private board sharing",
-      "5 Gb Storage",
-      "Web Analytics",
-      "Private Mode",
+      "1 Linkly page",
+      "Basic click analytics",
+      "Customizable profile theme",
+      "Standard support",
     ],
   },
   {
     title: "Pro",
-    price: "$10",
+    price: "$5 / month",
     features: [
-      "Private board sharing",
-      "10 Gb Storage",
-      "Web Analytics (Advance)",
-      "Private Mode",
+      "Up to 5 Linkly pages",
+      "Advanced click analytics",
+      "Custom domain support (e.g., yourname.linkly.app)",
+      "Access to premium themes",
+      "Priority email support",
     ],
   },
   {
-    title: "Enterprise",
-    price: "$200",
+    title: "Business",
+    price: "$20 / month",
     features: [
-      "Private board sharing",
-      "Unlimited Storage",
-      "High Performance Network",
-      "Private Mode",
+      "Unlimited Linkly pages",
+      "Detailed analytics with trends",
+      "Team collaboration features",
+      "Custom branding options",
+      "24/7 priority support",
     ],
   },
 ];
 
+
 export const resourcesLinks = [
   { href: "#", text: "Getting Started" },
-  { href: "#", text: "Documentation" },
+  { href: "#", text: "Help Center" },
   { href: "#", text: "Tutorials" },
-  { href: "#", text: "API Reference" },
-  { href: "#", text: "Community Forums" },
+  { href: "#", text: "FAQs" },
+  { href: "#", text: "Contact Support" },
 ];
 
 export const platformLinks = [
   { href: "#", text: "Features" },
-  { href: "#", text: "Supported Devices" },
-  { href: "#", text: "System Requirements" },
-  { href: "#", text: "Downloads" },
-  { href: "#", text: "Release Notes" },
+  { href: "#", text: "Pricing" },
+  { href: "#", text: "Custom Links" },
+  { href: "#", text: "Analytics" },
+  { href: "#", text: "Pro Tools" },
 ];
 
 export const communityLinks = [
+  { href: "#", text: "Blog" },
+  { href: "#", text: "Discord" },
+  { href: "#", text: "Social Media" },
   { href: "#", text: "Events" },
-  { href: "#", text: "Meetups" },
-  { href: "#", text: "Conferences" },
-  { href: "#", text: "Hackathons" },
-  { href: "#", text: "Jobs" },
+  { href: "#", text: "Feedback" },
 ];

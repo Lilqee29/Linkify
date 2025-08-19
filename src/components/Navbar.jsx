@@ -2,6 +2,7 @@ import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import logo from "../assets/logo.png";
 import { navItems } from "../constants";
+import { Link } from 'react-router-dom'
 
 const Navbar = () => {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
@@ -15,8 +16,10 @@ const Navbar = () => {
       <div className="container px-4 mx-auto relative lg:text-sm">
         <div className="flex justify-between items-center">
           <div className="flex items-center flex-shrink-0">
-            <img className="h-10 w-10 mr-2" src={logo} alt="Logo" />
-            <span className="text-xl tracking-tight">VirtualR</span>
+           <Link to="/#" className="flex items-center">
+              <img className="h-10 w-10 mr-2" src={logo} alt="Logo" />
+              <span className="text-xl tracking-tight">Linkly</span>
+           </Link>
           </div>
           <ul className="hidden lg:flex ml-14 space-x-12">
             {navItems.map((item, index) => (
@@ -25,16 +28,21 @@ const Navbar = () => {
               </li>
             ))}
           </ul>
+
           <div className="hidden lg:flex justify-center space-x-12 items-center">
-            <a href="#" className="py-2 px-3 border rounded-md">
+            <Link
+              to="/login"
+              className="py-2 px-3 border rounded-md hover:bg-gray-100 transition duration-300"
+            >
               Sign In
-            </a>
-            <a
-              href="#"
-              className="bg-gradient-to-r from-orange-500 to-orange-800 py-2 px-3 rounded-md"
+            </Link>
+
+            <Link
+              to="/register"
+              className="bg-gradient-to-r from-orange-500 to-orange-800 py-2 px-3 rounded-md text-white hover:opacity-90 transition duration-300"
             >
               Create an account
-            </a>
+            </Link>
           </div>
           <div className="lg:hidden md:flex flex-col justify-end">
             <button onClick={toggleNavbar}>
@@ -47,7 +55,9 @@ const Navbar = () => {
             <ul>
               {navItems.map((item, index) => (
                 <li key={index} className="py-4">
-                  <a href={item.href}>{item.label}</a>
+                 <Link to={item.href} className="hover:text-indigo-400 transition">
+                    {item.label}
+                  </Link>
                 </li>
               ))}
             </ul>
