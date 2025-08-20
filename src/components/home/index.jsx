@@ -1,15 +1,11 @@
-import React, { useEffect } from "react";
+import React from 'react'
+import { useAuth } from '../../contexts/authContext'
 
 const Home = () => {
-  useEffect(() => {
-    alert("You are in Home!");
-  }, []);
+    const { currentUser } = useAuth()
+    return (
+        <div className='text-2xl font-bold pt-14'>Hello {currentUser.displayName ? currentUser.displayName : currentUser.email}, you are now logged in.</div>
+    )
+}
 
-  return (
-    <div className="flex justify-center items-center h-full">
-      <h1 className="text-2xl font-bold">Home Page (Test Alert)</h1>
-    </div>
-  );
-};
-
-export default Home;
+export default Home

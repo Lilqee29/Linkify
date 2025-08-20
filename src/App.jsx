@@ -15,7 +15,9 @@ import Login from "./components/auth/login";
 import Register from "./components/auth/register";
 
 // Dashboard
-import Dashboard from "./components/Dashboard";
+import Dashboard from "./components/dashboard/Dashboard";
+import DashboardNavbar from "./components/dashboard/DashboardNavbar"; // ✅ new import
+import UserProfile from "./public/UserProfile";
 
 // Context
 import { AuthProvider, useAuth } from "./contexts/authContext";
@@ -36,7 +38,10 @@ const Landing = () => (
 );
 
 // ===== Private Route Wrapper =====
-
+const PrivateRoute = ({ children }) => {
+  const { currentUser } = useAuth();
+  return currentUser ? children : <Navigate to="/login" />;
+};
 
 // ===== App Component =====
 function App() {
@@ -56,20 +61,21 @@ function App() {
     { path: "/", element: <Landing /> },
     { path: "/login", element: <Login /> },
     { path: "/register", element: <Register /> },
+    {
+      path: "/dashboard",
+      element: (
+        <PrivateRoute>
+          <Dashboard />  {/* Navbar is already inside Dashboard */}
+        </PrivateRoute>
+      ),
+    },
+    { path: "/profile/:username", element: <UserProfile /> },
     { path: "*", element: <Landing /> }, // fallback
   ];
 
   const routesElement = useRoutes(routesArray);
 
-  return (
-    <AuthProvider>
-      {/* Dark mode toggle button */}
-
-
-      {/* Render Routes */}
-      <div className="w-full min-h-screen flex flex-col">{routesElement}</div>
-    </AuthProvider>
-  );
+  return <AuthProvider>{routesElement}</AuthProvider>;
 }
 
 export default App;
