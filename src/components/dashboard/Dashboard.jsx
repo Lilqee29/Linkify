@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "../../contexts/authContext";
-import { PlusCircle, Eye, Edit2, Trash2, X, User } from "lucide-react";
+import { PlusCircle, Eye, Edit2, Trash2, X, User, Image as ImageIcon } from "lucide-react";
 import DashboardNavbar from "./DashboardNavbar";
 import { useNavigate } from "react-router-dom";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -19,7 +19,10 @@ const iconMap = {
 const Dashboard = () => {
   const { currentUser, updateProfile } = useAuth();
   const navigate = useNavigate();
-  const username = currentUser?.displayName || currentUser?.email?.split("@")[0] || "User";
+  const username =
+    currentUser?.displayName ||
+    currentUser?.email?.split("@")[0] ||
+    "User";
 
   // ------------------- State -------------------
   const [links, setLinks] = useState([
@@ -75,8 +78,10 @@ const Dashboard = () => {
   // ------------------- Bio Save -------------------
   const handleSaveBio = async () => {
     try {
-      await updateProfile(currentUser, { displayName: username, bio });
-      setBioModalOpen(false);
+      setBioModalOpen(false); // close modal
+      // just update state immediately
+      setBio(bio);
+      await updateProfile(currentUser, { displayName: username });
       alert("Bio updated ✅");
     } catch (error) {
       console.error("Error updating bio:", error);
@@ -92,10 +97,7 @@ const Dashboard = () => {
         await uploadBytes(fileRef, profileFile);
         const url = await getDownloadURL(fileRef);
         setProfilePic(url);
-
         await updateProfile(currentUser, { photoURL: url });
-      } else if (profilePic) {
-        await updateProfile(currentUser, { photoURL: profilePic });
       }
       setProfilePicModalOpen(false);
       alert("Profile picture updated ✅");
@@ -194,7 +196,9 @@ const Dashboard = () => {
             <button onClick={() => setBioModalOpen(false)} className="absolute top-4 right-4 text-neutral-400 hover:text-orange-500">
               <X />
             </button>
-            <h2 className="text-2xl font-bold mb-4">Edit Bio</h2>
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+              <Edit2 /> Edit Bio
+            </h2>
             <textarea
               value={bio}
               onChange={(e) => setBio(e.target.value)}
@@ -203,9 +207,9 @@ const Dashboard = () => {
             />
             <button
               onClick={handleSaveBio}
-              className="mt-4 w-full bg-orange-500 text-black font-bold py-3 rounded-xl hover:bg-orange-600 transition"
+              className="mt-4 w-full bg-orange-500 text-black font-bold py-3 rounded-xl hover:bg-orange-600 transition flex items-center justify-center gap-2"
             >
-              Save Bio
+              <Edit2 /> Save Bio
             </button>
           </div>
         </div>
@@ -218,9 +222,11 @@ const Dashboard = () => {
             <button onClick={() => setProfilePicModalOpen(false)} className="absolute top-4 right-4 text-neutral-400 hover:text-orange-500">
               <X />
             </button>
-            <h2 className="text-2xl font-bold mb-4">Change Profile Picture</h2>
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+              <ImageIcon /> Change Profile Picture
+            </h2>
 
-            {/* File upload */}
+            {/* File upload only */}
             <input
               type="file"
               accept="image/*"
@@ -228,21 +234,59 @@ const Dashboard = () => {
               className="mb-3 w-full text-white"
             />
 
-            {/* Or paste URL */}
-            <input
-              type="url"
-              placeholder="Or paste image URL"
-              value={profilePic}
-              onChange={(e) => setProfilePic(e.target.value)}
-              className="w-full p-3 rounded-lg bg-neutral-800 text-white placeholder:text-neutral-400"
-            />
-
             <button
               onClick={handleSaveProfilePic}
-              className="mt-4 w-full bg-orange-500 text-black font-bold py-3 rounded-xl hover:bg-orange-600 transition"
+              className="mt-4 w-full bg-orange-500 text-black font-bold py-3 rounded-xl hover:bg-orange-600 transition flex items-center justify-center gap-2"
             >
-              Save Picture
+              <User /> Save Picture
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ------------------- Add/Edit Link Modal ------------------- */}
+      {modalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+          <div className="bg-neutral-900 p-6 rounded-xl w-11/12 max-w-md relative">
+            <button onClick={() => setModalOpen(false)} className="absolute top-4 right-4 text-neutral-400 hover:text-orange-500">
+              <X />
+            </button>
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+              <PlusCircle /> {editLink ? "Edit Link" : "Add New Link"}
+            </h2>
+            <form onSubmit={handleLinkSubmit} className="flex flex-col gap-3">
+              <input
+                type="text"
+                placeholder="Title"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                className="w-full p-3 rounded-lg bg-neutral-800 text-white placeholder:text-neutral-400"
+              />
+              <input
+                type="url"
+                placeholder="URL"
+                value={formData.url}
+                onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                className="w-full p-3 rounded-lg bg-neutral-800 text-white placeholder:text-neutral-400"
+              />
+              <select
+                value={formData.iconType}
+                onChange={(e) => setFormData({ ...formData, iconType: e.target.value })}
+                className="w-full p-3 rounded-lg bg-neutral-800 text-white"
+              >
+                <option value="default">Default</option>
+                <option value="instagram">Instagram</option>
+                <option value="youtube">YouTube</option>
+                <option value="twitter">Twitter</option>
+                <option value="facebook">Facebook</option>
+              </select>
+              <button
+                type="submit"
+                className="mt-2 w-full bg-orange-500 text-black font-bold py-3 rounded-xl hover:bg-orange-600 transition flex items-center justify-center gap-2"
+              >
+                <PlusCircle /> Save Link
+              </button>
+            </form>
           </div>
         </div>
       )}
