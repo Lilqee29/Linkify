@@ -1,22 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Navigate, Link } from "react-router-dom";
-import { getAuth, signOut } from "firebase/auth";
 import { doSignInWithEmailAndPassword, doSignInWithGoogle } from "../../../firebase/auth";
 import { useAuth } from "../../../contexts/authContext";
-import Navbar from "../../Navbar"; // Using your Navbar
+import Navbar from "../../Navbar";
 import { Mail, Lock } from "lucide-react";
 
 const Login = () => {
   const { userLoggedIn } = useAuth();
-  const auth = getAuth();
-
-  // Log out any previous session
-  useEffect(() => {
-    signOut(auth)
-      .then(() => console.log("Previous session logged out"))
-      .catch((err) => console.log("Error logging out:", err));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,21 +17,25 @@ const Login = () => {
     e.preventDefault();
     if (!isSigningIn) {
       setIsSigningIn(true);
-      await doSignInWithEmailAndPassword(email, password).catch((err) => {
+      try {
+        await doSignInWithEmailAndPassword(email, password);
+      } catch (err) {
         setErrorMessage(err.message);
         setIsSigningIn(false);
-      });
+      }
     }
   };
 
-  const onGoogleSignIn = (e) => {
+  const onGoogleSignIn = async (e) => {
     e.preventDefault();
     if (!isSigningIn) {
       setIsSigningIn(true);
-      doSignInWithGoogle().catch((err) => {
+      try {
+        await doSignInWithGoogle();
+      } catch (err) {
         setErrorMessage(err.message);
         setIsSigningIn(false);
-      });
+      }
     }
   };
 
@@ -52,17 +46,14 @@ const Login = () => {
 
   return (
     <div className="relative min-h-screen bg-black">
-      {/* Navbar */}
       <Navbar />
 
-      {/* Login Card */}
       <main className="flex items-center justify-center h-[calc(100vh-80px)] px-4">
         <div className="w-full max-w-md p-8 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-2xl">
           <h3 className="text-white text-2xl font-bold text-center">Welcome Back</h3>
           <p className="text-gray-400 text-center mb-6">Login to continue</p>
 
           <form onSubmit={onSubmit} className="space-y-5">
-            {/* Email */}
             <div className="relative">
               <label className="text-sm text-gray-300 font-bold">Email</label>
               <div className="flex items-center mt-2 bg-black/30 border border-white/20 rounded-lg px-3 py-2">
@@ -79,7 +70,6 @@ const Login = () => {
               </div>
             </div>
 
-            {/* Password */}
             <div className="relative">
               <label className="text-sm text-gray-300 font-bold">Password</label>
               <div className="flex items-center mt-2 bg-black/30 border border-white/20 rounded-lg px-3 py-2">
@@ -98,7 +88,6 @@ const Login = () => {
 
             {errorMessage && <span className="text-red-500 font-medium">{errorMessage}</span>}
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={isSigningIn}
@@ -110,7 +99,6 @@ const Login = () => {
             </button>
           </form>
 
-          {/* Register link */}
           <p className="text-center text-sm text-gray-400 mt-4">
             Don't have an account?{" "}
             <Link to="/register" className="text-orange-400 hover:underline font-bold">
@@ -118,14 +106,12 @@ const Login = () => {
             </Link>
           </p>
 
-          {/* Divider */}
           <div className="flex items-center my-6">
             <div className="flex-grow border-t border-gray-500"></div>
             <span className="mx-2 text-gray-400 text-sm font-bold">OR</span>
             <div className="flex-grow border-t border-gray-500"></div>
           </div>
 
-          {/* Google Sign In */}
           <button
             disabled={isSigningIn}
             onClick={onGoogleSignIn}
