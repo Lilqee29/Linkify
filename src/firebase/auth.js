@@ -7,9 +7,11 @@ import {
     updatePassword, 
     sendEmailVerification,
     setPersistence,
-    browserLocalPersistence
+    browserLocalPersistence,
+    
 } from 'firebase/auth';
 import { auth } from './firebase';
+import { createUserProfile } from './db'; // Import Firestore profile creation
 
 // Helper: Set cookie for 7 days
 const setLoginCookie = (user) => {
@@ -46,9 +48,18 @@ export const doSignInWithGoogle = async () => {
 
     await setPersistence(auth, browserLocalPersistence);
     const result = await signInWithPopup(auth, provider);
-    setLoginCookie(result.user);
-    return result.user;
+
+    const user = result.user;
+
+    // 🔹 Create Firestore profile if it doesn't exist
+    await createUserProfile(user);
+
+    // Keep session cookie
+    setLoginCookie(user);
+
+    return user;
 };
+
 
 // Sign out
 export const doSignOut = async () => {

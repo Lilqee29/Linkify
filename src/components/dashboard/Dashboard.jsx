@@ -3,7 +3,8 @@ import { useAuth } from "../../contexts/authContext";
 import { PlusCircle, Eye, Edit2, Trash2, X, User, Image as ImageIcon, Palette, Pi } from "lucide-react";
 import DashboardNavbar from "./DashboardNavbar";
 import { useNavigate } from "react-router-dom";
-// import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { useDashboardLinks } from "../../firebase/Dashboardlink"; // adjust path
+
 
 // Social Icons
 import { FaDiscord, FaPinterest,FaReddit,FaSnapchat,FaTelegram,FaTiktok,FaWhatsapp} from "react-icons/fa";
@@ -26,7 +27,6 @@ const iconMap = {
 
 };
 
-
 const Dashboard = () => {
   const { currentUser, updateProfile } = useAuth();
   const navigate = useNavigate();
@@ -36,12 +36,14 @@ const Dashboard = () => {
     "User";
 
   // ------------------- State -------------------
-  // eslint-disable-next-line no-unused-vars
-  const [categories, setCategories] = useState(["Social Media", "Work", "Projects"]);
-  const [links, setLinks] = useState([
-    { id: 1, title: "Instagram", url: "https://instagram.com", iconType: "instagram", category: "Social Media" },
-    { id: 2, title: "YouTube", url: "https://youtube.com", iconType: "youtube", category: "Social Media" },
-  ]);
+ 
+  const { links, categories,setCategories, newCategory, setNewCategory, handleLinkSubmit, handleDeleteLink } = useDashboardLinks();
+
+  // const [categories, setCategories] = useState(["Social", "Work", "Fun"]);
+  // const [links, setLinks] = useState([]);
+  // const [newCategory, setNewCategory] = useState(""); // to type a new category
+  // // const [selectedCategory, setSelectedCategory] = useState(""); // dropdown selection
+
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editLink, setEditLink] = useState(null);
@@ -148,22 +150,22 @@ const Dashboard = () => {
     setModalOpen(true);
   };
 
-  const handleDeleteLink = (id) => {
-    if (window.confirm("Are you sure you want to delete this link?")) {
-      setLinks(links.filter((link) => link.id !== id));
-    }
-  };
+  // const handleDeleteLink = (id) => {
+  //   if (window.confirm("Are you sure you want to delete this link?")) {
+  //     setLinks(links.filter((link) => link.id !== id));
+  //   }
+  // };
 
-  const handleLinkSubmit = (e) => {
-    e.preventDefault();
-    if (!formData.title || !formData.url) return alert("Title & URL are required!");
-    if (editLink) {
-      setLinks(links.map((link) => (link.id === editLink.id ? { ...link, ...formData } : link)));
-    } else {
-      setLinks([...links, { id: Date.now(), ...formData }]);
-    }
-    setModalOpen(false);
-  };
+  // const handleLinkSubmit = (e) => {
+  //   e.preventDefault();
+  //   if (!formData.title || !formData.url) return alert("Title & URL are required!");
+  //   if (editLink) {
+  //     setLinks(links.map((link) => (link.id === editLink.id ? { ...link, ...formData } : link)));
+  //   } else {
+  //     setLinks([...links, { id: Date.now(), ...formData }]);
+  //   }
+  //   setModalOpen(false);
+  // };
 
   const handlePreview = () => {
     // If using a custom theme, pass customTheme, else pass the selected predefined theme
@@ -347,7 +349,7 @@ useEffect(() => {
           {allCategories.map(category => (
             <div key={category}>
               <h2 className="text-xl font-bold mb-2 text-orange-400">
-                {category === "None" ? "Other" : category}
+               {!category ? "Other" : category}
               </h2>
               <div className="flex flex-col gap-2">
                 {groupedLinks[category].length === 0 ? (
@@ -418,6 +420,8 @@ useEffect(() => {
         </div>
       )}
 
+      
+
       {/* ------------------- Profile Pic Modal ------------------- */}
       {profilePicModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
@@ -472,6 +476,7 @@ useEffect(() => {
           </div>
         </div>
       )}
+      
 
       {/* ------------------- Add/Edit Link Modal ------------------- */}
       {modalOpen && (
@@ -483,7 +488,13 @@ useEffect(() => {
             <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
               <PlusCircle /> {editLink ? "Edit Link" : "Add New Link"}
             </h2>
-            <form onSubmit={handleLinkSubmit} className="flex flex-col gap-3">
+           <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleLinkSubmit(formData, editLink, setModalOpen);
+                }}
+                className="flex flex-col gap-3"
+            >
               <input
                 type="text"
                 placeholder="Title"
@@ -518,26 +529,42 @@ useEffect(() => {
                 <option value="whatsapp">WhatsApp</option>
                 <option value="telegram">Telegram</option>
               </select>
+              {/* Category Select */}
               <select
                 value={formData.category}
                 onChange={e => setFormData({ ...formData, category: e.target.value })}
                 className="w-full p-3 rounded-lg bg-neutral-800 text-white"
               >
-                <option value="">None</option>
-                {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                <option value="">-- Select Category --</option>
+                {categories.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
               </select>
-              <input
-                type="text"
-                placeholder="Add new category"
-                onKeyDown={e => {
-                  if (e.key === "Enter" && e.target.value.trim()) {
-                    setCategories([...categories, e.target.value.trim()]);
-                    setFormData({ ...formData, category: e.target.value.trim() });
-                    e.target.value = "";
+
+              {/* Add new category */}
+              <div className="flex gap-2 mt-2">
+                <input
+                  type="text"
+                  placeholder="Add new category"
+                  value={newCategory}
+                  onChange={e => setNewCategory(e.target.value)}
+                  className="flex-1 p-2 rounded-lg bg-neutral-800 text-white"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                  if (newCategory.trim() && !categories.includes(newCategory.trim())) {
+                    setCategories([...categories, newCategory.trim()]);
+                    setFormData({ ...formData, category: newCategory.trim() });
+                    setNewCategory("");
                   }
-                }}
-                className="w-full p-2 rounded-lg bg-neutral-800 text-white mt-2"
-              />
+                  }}
+                  className="bg-orange-500 px-3 rounded-lg text-black font-bold hover:bg-orange-600"
+                >
+                  Add
+                </button>
+              </div>
+
               <button
                 type="submit"
                 className="mt-2 w-full bg-orange-500 text-black font-bold py-3 rounded-xl hover:bg-orange-600 transition flex items-center justify-center gap-2"
@@ -788,7 +815,10 @@ useEffect(() => {
         </div>
       )}
     </div>
+    
   );
 };
+
+
 
 export default Dashboard;

@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { doCreateUserWithEmailAndPassword, doSendEmailVerification } from '../../../firebase/auth';
+// eslint-disable-next-line no-unused-vars
+import { doCreateUserWithEmailAndPassword, doSendEmailVerification} from '../../../firebase/auth';
+import { createUserProfile } from '../../../firebase/db'; // Import Firestore profile creation
 import Navbar from "../../Navbar"; // using your Navbar
 import { Mail, Lock } from 'lucide-react';
 import { sendVerification } from '../../../firebase/SendVerification';
+
 
 const Register = () => {
     const [email, setEmail] = useState('');
@@ -18,28 +21,31 @@ const Register = () => {
 
     const onSignUp = async (e) => {
         e.preventDefault();
-
-        if (isSigningUp) return; // Prevent multiple submissions
+        if (isSigningUp) return;
 
         setIsSigningUp(true);
         setErrorMessage('');
         setSuccessMessage('');
 
         try {
-            // 1️⃣ Create user
+            // 1️⃣ Create user in Firebase Auth
             const userCredential = await doCreateUserWithEmailAndPassword(email, password);
+            const user = userCredential.user;
 
-            // 2️⃣ Send email verification
-           await sendVerification(userCredential.user);
+            // 2️⃣ Create Firestore profile doc
+            await createUserProfile(user);
 
-            // 3️⃣ Success message
+            // 3️⃣ Send email verification
+            await sendVerification(user);
+
+            // 4️⃣ Success message
             setSuccessMessage('✅ Account created! Check your email to verify your account.');
 
             // Clear input fields
             setEmail('');
             setPassword('');
 
-            // Optionally redirect after some delay
+            // Redirect after delay
             setTimeout(() => navigate('/login'), 3000);
 
         } catch (error) {
@@ -48,6 +54,7 @@ const Register = () => {
             setIsSigningUp(false);
         }
     };
+
 
     return (
         <div className="w-full min-h-screen bg-black flex flex-col">
