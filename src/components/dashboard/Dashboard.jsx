@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useDashboardLinks } from "../../firebase/Dashboardlink"; // adjust path
 import { useDashboardProfile } from "../../firebase/Dashboardbio"; // adjust path
 import { useDashboardProfilePic } from "../../firebase/DashboardprofilePic"; // adjust path
+import { useDashboardTheme } from "../../firebase/useDashboardtheme"; // adjust path
 
 
 
@@ -31,6 +32,7 @@ const iconMap = {
 };
 
 const Dashboard = () => {
+  // eslint-disable-next-line no-unused-vars
   const { currentUser, updateProfile } = useAuth();
   const navigate = useNavigate();
   const username =
@@ -65,20 +67,30 @@ const saveProfilePic = async () => {
   setProfileFile(null); // reset the selected file
   setProfilePicModalOpen(false); // close modal
 };
+ const {
+    currentTheme,
+    setCurrentTheme,
+    customTheme,
+    setCustomTheme,
+    predefinedThemes,
+    handleSaveTheme
+  } = useDashboardTheme();
+
+  const [themeModalOpen, setThemeModalOpen] = useState(false);
 
 
 
   // ------------------- Theme State -------------------
-  const [themeModalOpen, setThemeModalOpen] = useState(false);
-  const [currentTheme, setCurrentTheme] = useState(currentUser?.theme || "default");
-  const [customTheme, setCustomTheme] = useState({
-    primaryColor: "#6366F1",   // Indigo-500 (modern Linktree-like accent)
-    secondaryColor: "#22D3EE", // Cyan-400 (fresh + lively highlight)
-    backgroundColor: "#0F172A", // Slate-900 (deep navy, softer than pure black)
-    textColor: "#F8FAFC",      // Slate-50 (off-white, easy on the eyes)
-    fontFamily: "'Inter', sans-serif"
-  });
-  // Example of improved default and preset themes for clarity and text emphasis:
+  // const [themeModalOpen, setThemeModalOpen] = useState(false);
+  // const [currentTheme, setCurrentTheme] = useState(currentUser?.theme || "default");
+  // const [customTheme, setCustomTheme] = useState({
+  //   primaryColor: "#6366F1",   // Indigo-500 (modern Linktree-like accent)
+  //   secondaryColor: "#22D3EE", // Cyan-400 (fresh + lively highlight)
+  //   backgroundColor: "#0F172A", // Slate-900 (deep navy, softer than pure black)
+  //   textColor: "#F8FAFC",      // Slate-50 (off-white, easy on the eyes)
+  //   fontFamily: "'Inter', sans-serif"
+  // });
+  // // Example of improved default and preset themes for clarity and text emphasis:
 // Helper function to calculate best text color
   function getContrastColor(bgColor) {
     if (!bgColor) return "#111111";
@@ -90,50 +102,50 @@ const saveProfilePic = async () => {
     return luminance > 0.6 ? "#111111" : "#ffffff";
   }
 
-  const predefinedThemes = {
-    classic: {
-      primaryColor: "#a78bfa", // Lavender
-      secondaryColor: "#f472b6", // Pink
-      backgroundColor: "#0f0f0f", // Dark
-      textColor: getContrastColor("#0f0f0f"),
-      fontFamily: "'Inter', sans-serif"
-    },
-    ocean: {
-      primaryColor: "#38bdf8", // Bright sky blue
-      secondaryColor: "#0ea5e9", // Deep cyan
-      backgroundColor: "#082f49", // Navy teal
-      textColor: getContrastColor("#082f49"),
-      fontFamily: "'Inter', sans-serif"
-    },
-    forest: {
-      primaryColor: "#34d399", // Emerald green
-      secondaryColor: "#059669", // Darker green
-      backgroundColor: "#064e3b", // Dark forest
-      textColor: getContrastColor("#fdf4ff"),
-      fontFamily: "'Inter', sans-serif"
-    },
-    sunset: {
-      primaryColor: "#f59e0b", // Amber
-      secondaryColor: "#ef4444", // Strong red-orange
-      backgroundColor: "#7c2d12", // Burnt orange
-      textColor: "#111827",
-      fontFamily: "'Inter', sans-serif"
-    },
-    cartoon: {
-      primaryColor: "#ec4899", // Hot pink
-      secondaryColor: "#8b5cf6", // Violet
-      backgroundColor: "#fdf4ff", // Light background
-      textColor: getContrastColor("#fdf4ff"),
-      fontFamily: "'Comic Neue', cursive"
-    },
-    playful: {
-      primaryColor: "#f43f5e", // Rose
-      secondaryColor: "#3b82f6", // Blue
-      backgroundColor: "#fdf2f8", // Light pink
-      textColor: getContrastColor("#fdf2f8"),
-      fontFamily: "'Bubblegum Sans', cursive"
-    }
-  };
+  // const predefinedThemes = {
+  //   classic: {
+  //     primaryColor: "#a78bfa", // Lavender
+  //     secondaryColor: "#f472b6", // Pink
+  //     backgroundColor: "#0f0f0f", // Dark
+  //     textColor: getContrastColor("#0f0f0f"),
+  //     fontFamily: "'Inter', sans-serif"
+  //   },
+  //   ocean: {
+  //     primaryColor: "#38bdf8", // Bright sky blue
+  //     secondaryColor: "#0ea5e9", // Deep cyan
+  //     backgroundColor: "#082f49", // Navy teal
+  //     textColor: getContrastColor("#082f49"),
+  //     fontFamily: "'Inter', sans-serif"
+  //   },
+  //   forest: {
+  //     primaryColor: "#34d399", // Emerald green
+  //     secondaryColor: "#059669", // Darker green
+  //     backgroundColor: "#064e3b", // Dark forest
+  //     textColor: getContrastColor("#fdf4ff"),
+  //     fontFamily: "'Inter', sans-serif"
+  //   },
+  //   sunset: {
+  //     primaryColor: "#f59e0b", // Amber
+  //     secondaryColor: "#ef4444", // Strong red-orange
+  //     backgroundColor: "#7c2d12", // Burnt orange
+  //     textColor: "#111827",
+  //     fontFamily: "'Inter', sans-serif"
+  //   },
+  //   cartoon: {
+  //     primaryColor: "#ec4899", // Hot pink
+  //     secondaryColor: "#8b5cf6", // Violet
+  //     backgroundColor: "#fdf4ff", // Light background
+  //     textColor: getContrastColor("#fdf4ff"),
+  //     fontFamily: "'Comic Neue', cursive"
+  //   },
+  //   playful: {
+  //     primaryColor: "#f43f5e", // Rose
+  //     secondaryColor: "#3b82f6", // Blue
+  //     backgroundColor: "#fdf2f8", // Light pink
+  //     textColor: getContrastColor("#fdf2f8"),
+  //     fontFamily: "'Bubblegum Sans', cursive"
+  //   }
+  // };
 
   // Load theme on component mount
   useEffect(() => {
@@ -256,39 +268,39 @@ useEffect(() => {
 }, []);
 
 
-  const handleSaveTheme = async () => {
-  try {
-    if (currentTheme !== "custom") {
-      // Update in backend
-      await updateProfile(currentUser, { theme: currentTheme });
+//   const handleSaveTheme = async () => {
+//   try {
+//     if (currentTheme !== "custom") {
+//       // Update in backend
+//       await updateProfile(currentUser, { theme: currentTheme });
 
-      // Save in localStorage
-      localStorage.setItem("theme", currentTheme);
+//       // Save in localStorage
+//       localStorage.setItem("theme", currentTheme);
 
-      // Reset customTheme in localStorage
-      localStorage.removeItem("customTheme");
-    } else {
-      // Update in backend
-      await updateProfile(currentUser, { 
-        theme: "custom", 
-        customTheme: customTheme 
-      });
+//       // Reset customTheme in localStorage
+//       localStorage.removeItem("customTheme");
+//     } else {
+//       // Update in backend
+//       await updateProfile(currentUser, { 
+//         theme: "custom", 
+//         customTheme: customTheme 
+//       });
 
-      // Save custom theme in localStorage
-      localStorage.setItem("theme", "custom");
-      localStorage.setItem("customTheme", JSON.stringify(customTheme));
-    }
+//       // Save custom theme in localStorage
+//       localStorage.setItem("theme", "custom");
+//       localStorage.setItem("customTheme", JSON.stringify(customTheme));
+//     }
 
-    // Update state
-    setCurrentTheme(currentTheme);
-    setCustomTheme(customTheme);
+//     // Update state
+//     setCurrentTheme(currentTheme);
+//     setCustomTheme(customTheme);
 
-  } catch (error) {
-    console.error("Error updating theme:", error);
-  } finally {
-    setThemeModalOpen(false);
-  }
-};
+//   } catch (error) {
+//     console.error("Error updating theme:", error);
+//   } finally {
+//     setThemeModalOpen(false);
+//   }
+// };
 
 
   const allCategories = ["None", ...categories];
@@ -599,21 +611,27 @@ useEffect(() => {
       {themeModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
           <div className="bg-neutral-900 p-6 rounded-xl w-11/12 max-w-md relative overflow-y-auto max-h-[90vh]">
-            <button onClick={() => setThemeModalOpen(false)} className="absolute top-4 right-4 text-neutral-400 hover:text-orange-500">
+            <button
+              onClick={() => setThemeModalOpen(false)}
+              className="absolute top-4 right-4 text-neutral-400 hover:text-orange-500"
+            >
               <X />
             </button>
+
             <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
               <Palette /> Customize Theme
             </h2>
-            
+
             {/* Predefined Themes */}
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-3">Choose a Theme</h3>
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <button
                   key="none"
-                  onClick={() => setCurrentTheme("custom")}
-                  className={`p-3 rounded-lg flex flex-col items-center transition-all border ${currentTheme === "custom" ? 'ring-2 ring-black scale-105 border-black' : 'border-neutral-300 hover:scale-105'}`}
+                  onClick={() => setCustomTheme({})} // triggers custom mode
+                  className={`p-3 rounded-lg flex flex-col items-center transition-all border ${
+                    currentTheme === "custom" ? "ring-2 ring-black scale-105 border-black" : "border-neutral-300 hover:scale-105"
+                  }`}
                   style={{
                     backgroundColor: "#fff",
                     color: "#222",
@@ -621,9 +639,13 @@ useEffect(() => {
                     fontFamily: customTheme.fontFamily,
                   }}
                 >
-                  <span className="mb-2 block w-6 h-6 rounded-full border" style={{ backgroundColor: customTheme.primaryColor, borderColor: customTheme.secondaryColor }}></span>
+                  <span
+                    className="mb-2 block w-6 h-6 rounded-full border"
+                    style={{ backgroundColor: customTheme.primaryColor, borderColor: customTheme.secondaryColor }}
+                  ></span>
                   <span>None (Custom)</span>
                 </button>
+
                 {Object.entries(predefinedThemes).map(([themeName, theme]) => (
                   <button
                     key={themeName}
@@ -631,7 +653,9 @@ useEffect(() => {
                       setCurrentTheme(themeName);
                       setCustomTheme(theme);
                     }}
-                    className={`p-3 rounded-lg flex flex-col items-center transition-all border ${currentTheme === themeName ? 'ring-2 ring-black scale-105 border-black' : 'border-neutral-300 hover:scale-105'}`}
+                    className={`p-3 rounded-lg flex flex-col items-center transition-all border ${
+                      currentTheme === themeName ? "ring-2 ring-black scale-105 border-black" : "border-neutral-300 hover:scale-105"
+                    }`}
                     style={{
                       backgroundColor: "#fff",
                       color: "#222",
@@ -639,97 +663,48 @@ useEffect(() => {
                       fontFamily: theme.fontFamily,
                     }}
                   >
-                    <span className="mb-2 block w-6 h-6 rounded-full border" style={{ backgroundColor: theme.primaryColor, borderColor: theme.secondaryColor }}></span>
+                    <span
+                      className="mb-2 block w-6 h-6 rounded-full border"
+                      style={{ backgroundColor: theme.primaryColor, borderColor: theme.secondaryColor }}
+                    ></span>
                     <span className="capitalize">{themeName}</span>
                   </button>
                 ))}
               </div>
             </div>
-            
+
             {/* Custom Theme */}
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-3">Customize Colors</h3>
               <div className="flex flex-col gap-3">
-                <div>
-                  <label className="block text-sm mb-1">Primary Color</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="color"
-                      value={customTheme.primaryColor}
-                      onChange={(e) => setCustomTheme({ ...customTheme, primaryColor: e.target.value })}
-                      className="w-10 h-10 rounded cursor-pointer"
-                    />
-                    <input
-                      type="text"
-                      value={customTheme.primaryColor}
-                      onChange={(e) => setCustomTheme({ ...customTheme, primaryColor: e.target.value })}
-                      className="flex-1 p-2 rounded-lg bg-neutral-800 text-white"
-                    />
+                {["primaryColor", "secondaryColor", "backgroundColor", "textColor"].map((key) => (
+                  <div key={key}>
+                    <label className="block text-sm mb-1">{key.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="color"
+                        value={customTheme[key]}
+                        onChange={(e) => setCustomTheme({ [key]: e.target.value, ...(key === "backgroundColor" ? { textColor: getContrastColor(e.target.value) } : {}) })}
+                        className="w-10 h-10 rounded cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={customTheme[key]}
+                        onChange={(e) => setCustomTheme({ [key]: e.target.value, ...(key === "backgroundColor" ? { textColor: getContrastColor(e.target.value) } : {}) })}
+                        className="flex-1 p-2 rounded-lg bg-neutral-800 text-white"
+                      />
+                    </div>
                   </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm mb-1">Secondary Color</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="color"
-                      value={customTheme.secondaryColor}
-                      onChange={(e) => setCustomTheme({ ...customTheme, secondaryColor: e.target.value })}
-                      className="w-10 h-10 rounded cursor-pointer"
-                    />
-                    <input
-                      type="text"
-                      value={customTheme.secondaryColor}
-                      onChange={(e) => setCustomTheme({ ...customTheme, secondaryColor: e.target.value })}
-                      className="flex-1 p-2 rounded-lg bg-neutral-800 text-white"
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm mb-1">Background Color</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="color"
-                      value={customTheme.backgroundColor}
-                      onChange={(e) => setCustomTheme({ ...customTheme, backgroundColor: e.target.value, textColor: getContrastColor(e.target.value) })}
-                      className="w-10 h-10 rounded cursor-pointer"
-                    />
-                    <input
-                      type="text"
-                      value={customTheme.backgroundColor}
-                      onChange={(e) => setCustomTheme({ ...customTheme, backgroundColor: e.target.value, textColor: getContrastColor(e.target.value) })}
-                      className="flex-1 p-2 rounded-lg bg-neutral-800 text-white"
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm mb-1">Text Color</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="color"
-                      value={customTheme.textColor}
-                      onChange={(e) => setCustomTheme({ ...customTheme, textColor: e.target.value })}
-                      className="w-10 h-10 rounded cursor-pointer"
-                    />
-                    <input
-                      type="text"
-                      value={customTheme.textColor}
-                      onChange={(e) => setCustomTheme({ ...customTheme, textColor: e.target.value })}
-                      className="flex-1 p-2 rounded-lg bg-neutral-800 text-white"
-                    />
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
-            
+
             {/* Font Selection */}
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-3">Font Family</h3>
               <select
                 value={customTheme.fontFamily}
-                onChange={(e) => setCustomTheme({ ...customTheme, fontFamily: e.target.value })}
+                onChange={(e) => setCustomTheme({ fontFamily: e.target.value })}
                 className="w-full p-3 rounded-lg bg-neutral-800 text-white"
               >
                 <option value="'Inter', sans-serif">Inter (Default)</option>
@@ -737,7 +712,6 @@ useEffect(() => {
                 <option value="'Poppins', sans-serif">Poppins</option>
                 <option value="'Montserrat', sans-serif">Montserrat</option>
                 <option value="'Open Sans', sans-serif">Open Sans</option>
-                {/* Playful/Cartoon Fonts */}
                 <option value="'Comic Neue', cursive">Comic Neue</option>
                 <option value="'Bubblegum Sans', cursive">Bubblegum Sans</option>
                 <option value="'Fredoka One', cursive">Fredoka One</option>
@@ -745,94 +719,111 @@ useEffect(() => {
                 <option value="'Architects Daughter', cursive">Architects Daughter</option>
               </select>
             </div>
-            
+
             {/* Preview */}
             <div className="mb-6 p-4 rounded-lg" style={{ backgroundColor: customTheme.backgroundColor }}>
-              <h3 className="text-lg font-semibold mb-2" style={{ color: customTheme.textColor, fontFamily: customTheme.fontFamily }}>Theme Preview</h3>
+              <h3 className="text-lg font-semibold mb-2" style={{ color: customTheme.textColor, fontFamily: customTheme.fontFamily }}>
+                Theme Preview
+              </h3>
               <div className="flex gap-2 mb-2">
-                <button className="px-3 py-1 rounded" style={{ backgroundColor: customTheme.primaryColor, color: customTheme.backgroundColor === '#ffffff' ? '#000000' : '#ffffff' }}>Primary Button</button>
-                <button className="px-3 py-1 rounded" style={{ backgroundColor: customTheme.secondaryColor, color: customTheme.backgroundColor === '#ffffff' ? '#000000' : '#ffffff' }}>Secondary Button</button>
+                <button className="px-3 py-1 rounded" style={{ backgroundColor: customTheme.primaryColor, color: customTheme.backgroundColor === "#ffffff" ? "#000000" : "#ffffff" }}>Primary Button</button>
+                <button className="px-3 py-1 rounded" style={{ backgroundColor: customTheme.secondaryColor, color: customTheme.backgroundColor === "#ffffff" ? "#000000" : "#ffffff" }}>Secondary Button</button>
               </div>
               <p style={{ color: customTheme.textColor, fontFamily: customTheme.fontFamily }}>This is how your text will look with the selected theme.</p>
             </div>
-            
+
+            {/* Save Button */}
             <button
-              onClick={handleSaveTheme}
+              onClick={async () => {
+                console.log("Save button clicked");
+                try {
+                  await handleSaveTheme();
+                  console.log("Theme saved successfully!");
+                } catch (err) {
+                  console.error("Error saving theme:", err);
+                }
+                setThemeModalOpen(false);
+                console.log("themeModalOpen after closing:", themeModalOpen);
+              }}
               className="w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition"
-              style={{ backgroundColor: customTheme.primaryColor, color: customTheme.backgroundColor === '#ffffff' ? '#000000' : '#ffffff' }}
+              style={{
+                backgroundColor: customTheme.primaryColor,
+                color: customTheme.backgroundColor === "#ffffff" ? "#000000" : "#ffffff",
+              }}
             >
               <Palette /> Save Theme
             </button>
-
             {/* ------------------- Theme Card Preview ------------------- */}
-            <div className="mb-6 mt-12 flex justify-center">
-              <div
-                className="w-full max-w-xs bg-white/90 rounded-3xl shadow-2xl flex flex-col items-center relative"
-                style={{
-                  border: `2px solid ${customTheme.primaryColor}`,
-                  boxShadow: `0 8px 32px 0 ${customTheme.primaryColor}33`
-                }}
-              >
-                {/* Profile Pic - Overlapping */}
-                <div className="absolute -top-10 left-1/2 -translate-x-1/2">
-                  <div
-                    className="w-20 h-20 rounded-full border-4 shadow-lg flex items-center justify-center text-3xl font-bold overflow-hidden"
+          <div className="mb-6 mt-12 flex justify-center">
+            <div
+              className="w-full max-w-xs bg-white/90 rounded-3xl shadow-2xl flex flex-col items-center relative"
+              style={{
+                border: `2px solid ${customTheme.primaryColor}`,
+                boxShadow: `0 8px 32px 0 ${customTheme.primaryColor}33`,
+              }}
+            >
+              {/* Profile Pic - Overlapping */}
+              <div className="absolute -top-10 left-1/2 -translate-x-1/2">
+                <div
+                  className="w-20 h-20 rounded-full border-4 shadow-lg flex items-center justify-center text-3xl font-bold overflow-hidden"
+                  style={{
+                    background: customTheme.primaryColor,
+                    color: customTheme.backgroundColor,
+                    borderColor: customTheme.secondaryColor,
+                  }}
+                >
+                  U
+                </div>
+              </div>
+              <div className="pt-14 pb-4 px-4 w-full flex flex-col items-center">
+                <div
+                  className="text-base font-semibold mb-1"
+                  style={{ color: customTheme.primaryColor }}
+                >
+                  Good Afternoon, welcome to my page 👋
+                </div>
+                <h1
+                  className="text-lg font-bold mb-1"
+                  style={{ color: customTheme.textColor }}
+                >
+                  Username
+                </h1>
+                <p
+                  className="text-center mb-3"
+                  style={{ color: customTheme.textColor, opacity: 0.8 }}
+                >
+                  This is a bio preview.
+                </p>
+                <div className="w-full flex flex-col gap-2">
+                  <button
+                    className="flex items-center gap-3 font-bold px-4 py-3 rounded-full shadow transition w-full text-left text-base"
                     style={{
                       background: customTheme.primaryColor,
                       color: customTheme.backgroundColor,
-                      borderColor: customTheme.secondaryColor
+                      fontFamily: customTheme.fontFamily,
                     }}
                   >
-                    U
-                  </div>
-                </div>
-                <div className="pt-14 pb-4 px-4 w-full flex flex-col items-center">
-                  <div
-                    className="text-base font-semibold mb-1"
-                    style={{ color: customTheme.primaryColor }}
+                    <LinkIcon /> Example Link
+                  </button>
+                  <button
+                    className="flex items-center gap-3 font-bold px-4 py-3 rounded-full shadow transition w-full text-left text-base"
+                    style={{
+                      background: customTheme.primaryColor,
+                      color: customTheme.backgroundColor,
+                      fontFamily: customTheme.fontFamily,
+                    }}
                   >
-                    Good Afternoon, welcome to my page 👋
-                  </div>
-                  <h1
-                    className="text-lg font-bold mb-1"
-                    style={{ color: customTheme.textColor }}
-                  >
-                    Username
-                  </h1>
-                  <p
-                    className="text-center mb-3"
-                    style={{ color: customTheme.textColor, opacity: 0.8 }}
-                  >
-                    This is a bio preview.
-                  </p>
-                  <div className="w-full flex flex-col gap-2">
-                    <button
-                      className="flex items-center gap-3 font-bold px-4 py-3 rounded-full shadow transition w-full text-left text-base"
-                      style={{
-                        background: customTheme.primaryColor,
-                        color: customTheme.backgroundColor,
-                        fontFamily: customTheme.fontFamily
-                      }}
-                    >
-                      <LinkIcon /> Example Link
-                    </button>
-                    <button
-                      className="flex items-center gap-3 font-bold px-4 py-3 rounded-full shadow transition w-full text-left text-base"
-                      style={{
-                        background: customTheme.primaryColor,
-                        color: customTheme.backgroundColor,
-                        fontFamily: customTheme.fontFamily
-                      }}
-                    >
-                      <LinkIcon /> Another Link
-                    </button>
-                  </div>
+                    <LinkIcon /> Another Link
+                  </button>
                 </div>
               </div>
             </div>
           </div>
+
+          </div>
         </div>
       )}
+
     </div>
     
   );
