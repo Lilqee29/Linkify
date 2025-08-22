@@ -4,6 +4,9 @@ import { PlusCircle, Eye, Edit2, Trash2, X, User, Image as ImageIcon, Palette, P
 import DashboardNavbar from "./DashboardNavbar";
 import { useNavigate } from "react-router-dom";
 import { useDashboardLinks } from "../../firebase/Dashboardlink"; // adjust path
+import { useDashboardProfile } from "../../firebase/Dashboardbio"; // adjust path
+import { useDashboardProfilePic } from "../../firebase/DashboardprofilePic"; // adjust path
+
 
 
 // Social Icons
@@ -52,9 +55,17 @@ const Dashboard = () => {
   const [bioModalOpen, setBioModalOpen] = useState(false);
   const [profilePicModalOpen, setProfilePicModalOpen] = useState(false);
 
-  const [bio, setBio] = useState(currentUser?.bio || "");
-  const [profilePic, setProfilePic] = useState(currentUser?.photoURL || "");
-  const [profileFile, setProfileFile] = useState(null);
+  const { bio, setBio, handleSaveBio } = useDashboardProfile();
+
+  const { profilePic,profileFile, setProfileFile, handleSaveProfilePic } = useDashboardProfilePic();
+
+const saveProfilePic = async () => {
+  if (!profileFile) return; // nothing selected
+  await handleSaveProfilePic(); // uses profileFile from hook
+  setProfileFile(null); // reset the selected file
+  setProfilePicModalOpen(false); // close modal
+};
+
 
 
   // ------------------- Theme State -------------------
@@ -181,53 +192,53 @@ const Dashboard = () => {
   };
 
   // ------------------- Bio Save -------------------
-  const handleSaveBio = async () => {
-    try {
-      setBioModalOpen(false); // close modal
-      // just update state immediately
-      setBio(bio);
-      await updateProfile(currentUser, { displayName: username });
-      alert("Bio updated ✅");
-    } catch (error) {
-      console.error("Error updating bio:", error);
-    }
-  };
+  // const handleSaveBio = async () => {
+  //   try {
+  //     setBioModalOpen(false); // close modal
+  //     // just update state immediately
+  //     setBio(bio);
+  //     await updateProfile(currentUser, { displayName: username });
+  //     alert("Bio updated ✅");
+  //   } catch (error) {
+  //     console.error("Error updating bio:", error);
+  //   }
+  // };
 
   // ------------------- Profile Pic Upload + Save -------------------
-  const handleSaveProfilePic = async () => {
-    try {
-      if (profileFile) {
-        // Close the modal immediately
-        setProfilePicModalOpen(false);
+  // const handleSaveProfilePic = async () => {
+  //   try {
+  //     if (profileFile) {
+  //       // Close the modal immediately
+  //       setProfilePicModalOpen(false);
 
-        // Upload the file to ImgBB
-        const uploadToImgBB = async (file) => {
-          const formData = new FormData();
-          formData.append("image", file);
-          const res = await fetch(
-            "https://api.imgbb.com/1/upload?key=10aed3e501f26e66f261b55cd07d72c6",
-            {
-              method: "POST",
-              body: formData,
-            }
-          );
-          const data = await res.json();
-          return data.data.url; // direct link to uploaded image
-        };
+  //       // Upload the file to ImgBB
+  //       const uploadToImgBB = async (file) => {
+  //         const formData = new FormData();
+  //         formData.append("image", file);
+  //         const res = await fetch(
+  //           "https://api.imgbb.com/1/upload?key=10aed3e501f26e66f261b55cd07d72c6",
+  //           {
+  //             method: "POST",
+  //             body: formData,
+  //           }
+  //         );
+  //         const data = await res.json();
+  //         return data.data.url; // direct link to uploaded image
+  //       };
 
-        const url = await uploadToImgBB(profileFile);
+  //       const url = await uploadToImgBB(profileFile);
         
-        setProfilePic(url); // update state
-        await updateProfile(currentUser, { photoURL: url }); // update Firebase user profile
+  //       setProfilePic(url); // update state
+  //       await updateProfile(currentUser, { photoURL: url }); // update Firebase user profile
 
-        alert("Profile picture updated ✅");
-        // Optional: remove reload if you want it fully reactive
-        // window.location.reload();
-      }
-    } catch (error) {
-      console.error("Error updating profile pic:", error);
-    }
-  };
+  //       alert("Profile picture updated ✅");
+  //       // Optional: remove reload if you want it fully reactive
+  //       // window.location.reload();
+  //     }
+  //   } catch (error) {
+  //     console.error("Error updating profile pic:", error);
+  //   }
+  // };
 
 
   
@@ -411,7 +422,10 @@ useEffect(() => {
               rows={5}
             />
             <button
-              onClick={handleSaveBio}
+               onClick={() => {
+                handleSaveBio(bio); // save to Firestore
+                setBioModalOpen(false); // close modal
+              }} // pass the actual string, not the event
               className="mt-4 w-full bg-orange-500 text-black font-bold py-3 rounded-xl hover:bg-orange-600 transition flex items-center justify-center gap-2"
             >
               <Edit2 /> Save Bio
@@ -426,9 +440,13 @@ useEffect(() => {
       {profilePicModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
           <div className="bg-neutral-900 p-6 rounded-xl w-11/12 max-w-md relative">
-            <button onClick={() => setProfilePicModalOpen(false)} className="absolute top-4 right-4 text-neutral-400 hover:text-orange-500">
+            <button
+              onClick={() => setProfilePicModalOpen(false)}
+              className="absolute top-4 right-4 text-neutral-400 hover:text-orange-500"
+            >
               <X />
             </button>
+
             <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
               <ImageIcon /> Change Profile Picture
             </h2>
@@ -460,18 +478,19 @@ useEffect(() => {
                   type="file"
                   accept="image/*"
                   className="hidden"
-                  onChange={e => setProfileFile(e.target.files[0])}
+                  onChange={e => setProfileFile(e.target.files[0])} // sets the file correctly
                 />
               </label>
 
               {/* Save button */}
-              <button
-                onClick={handleSaveProfilePic}
-                className="mt-2 px-4 py-2 rounded-full bg-black text-white font-semibold hover:bg-neutral-800 transition"
-                disabled={!profileFile}
-              >
-                Save
-              </button>
+            <button
+              onClick={saveProfilePic}
+              className="mt-2 px-4 py-2 rounded-full bg-black text-white font-semibold hover:bg-neutral-800 transition"
+              disabled={!profileFile}
+            >
+              Save
+            </button>
+
             </div>
           </div>
         </div>
