@@ -45,7 +45,7 @@ const PrivateRoute = ({ children }) => {
 
 // ===== App Component =====
 function App() {
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode] = useState(false);
 
   // Dark mode toggle effect
   useEffect(() => {

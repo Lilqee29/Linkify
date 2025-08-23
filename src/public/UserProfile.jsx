@@ -101,249 +101,202 @@ const UserProfile = () => {
   };
 
   // State to control QR code visibility
-  const [showQR, setShowQR] = useState(false);
+  // const [showQR, setShowQR] = useState(false);
 
   return (
-    <div
-      className="min-h-screen flex flex-col items-center justify-center px-2 py-6"
-      style={{
-        background: theme.backgroundColor,
-        fontFamily: theme.fontFamily,
-        transition: "background 0.3s"
-      }}
-    >
-      {/* Back to Dashboard Button */}
-      <button
-        onClick={() => navigate("/dashboard")}
-        className="fixed top-6 left-6 px-4 py-2 rounded-full font-semibold shadow bg-white text-black hover:bg-gray-100 z-50"
-        style={{
-          border: `1.5px solid ${theme.primaryColor}`,
-        }}
-      >
-        ← Back to Dashboard
-      </button>
+    
+   <div
+  className="min-h-screen flex flex-col items-center justify-start px-2 py-4 sm:px-6 sm:py-12"
+  style={{
+    background: theme.backgroundColor,
+    fontFamily: theme.fontFamily,
+    transition: "background 0.3s",
+  }}
+>
+  {/* Share Button - Top Right Corner */}
+<button
+  onClick={handleShare}
+  className="fixed top-2 right-2 sm:top-6 sm:right-6 p-2 sm:p-3 rounded-full shadow flex items-center justify-center z-50 transition hover:scale-110"
+  style={{
+    background: theme.primaryColor,
+    color: theme.backgroundColor,
+    border: `1px solid ${theme.secondaryColor}`,
+  }}
+>
+  <Share className="w-4 h-4 sm:w-5 sm:h-5" />
+</button>
+  {/* Back Button - closer on mobile */}
+  <button
+    onClick={() => navigate("/dashboard")}
+    className="fixed top-2 left-2 sm:top-6 sm:left-6 px-2 py-1 sm:px-4 sm:py-2 rounded-full font-semibold shadow bg-white text-black hover:bg-gray-100 z-50 text-xs sm:text-base"
+    style={{ border: `1.5px solid ${theme.primaryColor}` }}
+  >
+    ← Back
+  </button>
 
-      {/* Card */}
+  {/* Card */}
+  <div
+    className="w-full sm:max-w-md bg-white/90 rounded-3xl shadow-2xl flex flex-col items-center relative mt-12 sm:mt-16"
+    style={{
+      border: `2px solid ${theme.primaryColor}`,
+      boxShadow: `0 8px 32px 0 ${theme.primaryColor}33`,
+    }}
+  >
+    {/* Profile Picture */}
+    <div className="absolute -top-12 sm:-top-16 left-1/2 -translate-x-1/2">
       <div
-        className="w-full max-w-md bg-white/90 rounded-3xl shadow-2xl flex flex-col items-center relative"
+        className="w-20 h-20 sm:w-32 sm:h-32 rounded-full border-4 shadow-lg flex items-center justify-center text-4xl sm:text-5xl font-bold overflow-hidden"
         style={{
-          border: `2px solid ${theme.primaryColor}`,
-          boxShadow: `0 8px 32px 0 ${theme.primaryColor}33`
+          background: theme.primaryColor,
+          color: theme.backgroundColor,
+          borderColor: theme.secondaryColor,
         }}
       >
-        {/* Profile Pic - Overlapping */}
-        <div className="absolute -top-16 left-1/2 -translate-x-1/2">
-          <div
-            className="w-32 h-32 rounded-full border-4 shadow-lg flex items-center justify-center text-5xl font-bold overflow-hidden"
-            style={{
-              background: theme.primaryColor,
-              color: theme.backgroundColor,
-              borderColor: theme.secondaryColor
-            }}
-          >
-            {profilePic ? (
-              <img
-                src={profilePic}
-                alt="Profile"
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              username.charAt(0).toUpperCase()
-            )}
-          </div>
-        </div>
-
-        {/* Card Content */}
-        <div className="pt-24 pb-8 px-6 w-full flex flex-col items-center">
-          {/* Greeting */}
-          <div
-            className="text-lg font-semibold mb-1"
-            style={{ color: theme.primaryColor, fontFamily: theme.fontFamily }}
-          >
-            {getGreeting()}
-          </div>
-          {/* Username */}
-          <h1
-            className="text-2xl font-bold mb-1"
-            style={{
-              color: theme.textColor,
-              fontFamily: theme.fontFamily
-            }}
-          >
-            {username}
-          </h1>
-          {/* Bio */}
-          <p
-            className="text-center mb-4"
-            style={{
-              color: theme.textColor,
-              opacity: 0.85,
-              fontFamily: theme.fontFamily
-            }}
-          >
-            {bio}
-          </p>
-
-          {/* Quick Links */}
-          <div className="flex gap-3 mb-6">
-            {quickLinks.map((link) => {
-              const Icon = iconMap[link.iconType] || LinkIcon;
-              return (
-                <a
-                  key={link.id}
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-3 rounded-full shadow transition flex items-center justify-center"
-                  style={{
-                    background: theme.secondaryColor,
-                    color: theme.backgroundColor
-                  }}
-                >
-                  <Icon className="w-5 h-5" />
-                </a>
-              );
-            })}
-          </div>
-
-          {/* Links Section */}
-          <div className="w-full flex flex-col gap-4">
-            {categories.length === 0 ? (
-              <p
-                className="text-center"
-                style={{ color: theme.textColor, opacity: 0.7 }}
-              >
-                No links available.
-              </p>
-            ) : (
-              categories.map((category) => (
-                <div key={category} className="mb-2">
-                  <h2
-                    className="text-base font-bold mb-2 uppercase tracking-wide"
-                    style={{ color: theme.primaryColor, opacity: 0.8 }}
-                  >
-                    {category}
-                  </h2>
-                  <div className="flex flex-col gap-3">
-                    {groupedLinks[category].map((link) => {
-                      const Icon = iconMap[link.iconType] || LinkIcon;
-                      return (
-                        <button
-                          key={link.id}
-                          onClick={() => handleLinkClick(link.id, link.url)}
-                          className={`flex items-center gap-3 font-bold px-6 py-4 rounded-full shadow transition w-full text-left text-base ${
-                            link.id === topLink?.id
-                              ? "ring-2 ring-yellow-400 bg-yellow-100"
-                              : ""
-                          }`}
-                          style={{
-                            background:
-                              link.id === topLink?.id
-                                ? "#fef08a"
-                                : theme.primaryColor,
-                            color:
-                              link.id === topLink?.id
-                                ? "#92400e"
-                                : theme.backgroundColor,
-                            fontFamily: theme.fontFamily,
-                            textDecoration: "none"
-                          }}
-                        >
-                          <Icon />
-                          {link.title}
-                          {typeof link.clicks === "number" && (
-                            <span className="ml-auto text-xs opacity-70">
-                              {link.clicks} clicks
-                            </span>
-                          )}
-                          {link.id === topLink?.id && (
-                            <span className="ml-2 px-2 py-1 bg-yellow-400 text-yellow-900 rounded text-xs font-semibold">
-                              Top Link
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )))
-            }
-          </div>
-
-          {/* QR Code Button */}
-
-        </div>
-      </div>
-
-      {/* QR Code Modal */}
-      {showQR && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50">
-          <div className="bg-white p-6 rounded-xl flex flex-col items-center">
-            <QRCodeCanvas
-              id="profile-qr"
-              value={window.location.href}
-              size={200}
-              bgColor="#fff"
-              fgColor="#000"
-              level="H"
-              includeMargin={true}
-            />
-            <button
-              onClick={() => {
-                const canvas = document.getElementById("profile-qr");
-                const pngUrl = canvas
-                  .toDataURL("image/png")
-                  .replace("image/png", "image/octet-stream");
-                const downloadLink = document.createElement("a");
-                downloadLink.href = pngUrl;
-                downloadLink.download = `${username}-qr.png`;
-                document.body.appendChild(downloadLink);
-                downloadLink.click();
-                document.body.removeChild(downloadLink);
-              }}
-              className="mt-4 px-4 py-2 rounded-full font-semibold bg-orange-500 text-white"
-            >
-              Download QR Code
-            </button>
-            <button
-              onClick={() => setShowQR(false)}
-              className="mt-2 px-4 py-2 rounded-full font-semibold bg-gray-200 text-gray-800"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* QR Code Always Visible, Bottom Left */}
-      <div className="fixed bottom-6 left-6 z-50 flex flex-col items-center">
-        <QRCodeCanvas
-          id="profile-qr"
-          value={window.location.href}
-          size={80}
-          bgColor="#fff"
-          fgColor="#000"
-          level="H"
-          includeMargin={true}
-          style={{
-            borderRadius: "12px",
-            boxShadow: "0 2px 8px 0 rgba(0,0,0,0.10)",
-            background: "#fff"
-          }}
-        />
-        <span
-          className="mt-1 text-xs font-semibold"
-          style={{
-            color: getContrastColor(theme.backgroundColor),
-            background: "rgba(255,255,255,0.7)",
-            borderRadius: "6px",
-            padding: "2px 8px"
-          }}
-        >
-          Scan Me
-        </span>
+        {profilePic ? (
+          <img
+            src={profilePic}
+            alt="Profile"
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          username.charAt(0).toUpperCase()
+        )}
       </div>
     </div>
+
+    {/* Card Content */}
+    <div className="pt-20 sm:pt-24 pb-6 px-3 sm:px-6 w-full flex flex-col items-center gap-3 sm:gap-4">
+      {/* Greeting */}
+      <div
+        className="text-sm sm:text-lg font-semibold text-center"
+        style={{ color: theme.primaryColor, fontFamily: theme.fontFamily }}
+      >
+        {getGreeting()}
+      </div>
+
+      {/* Username */}
+      <h1
+        className="text-lg sm:text-2xl font-bold text-center"
+        style={{ color: theme.textColor, fontFamily: theme.fontFamily }}
+      >
+        {username}
+      </h1>
+
+      {/* Bio */}
+      <p
+        className="text-center text-xs sm:text-base mb-2 px-1 sm:px-2"
+        style={{ color: theme.textColor, opacity: 0.85, fontFamily: theme.fontFamily }}
+      >
+        {bio}
+      </p>
+
+      {/* Quick Links */}
+      <div className="flex flex-wrap gap-2 sm:gap-3 justify-center mb-3">
+        {quickLinks.map((link) => {
+          const Icon = iconMap[link.iconType] || LinkIcon;
+          return (
+            <a
+              key={link.id}
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 sm:p-3 rounded-full shadow flex items-center justify-center transition hover:scale-105"
+              style={{ background: theme.secondaryColor, color: theme.backgroundColor }}
+            >
+              <Icon className="w-4 h-4 sm:w-6 sm:h-6" />
+            </a>
+          );
+        })}
+      </div>
+
+      {/* Links Section */}
+      <div className="w-full flex flex-col gap-2 sm:gap-3">
+        {categories.length === 0 ? (
+          <p className="text-center text-xs sm:text-sm" style={{ color: theme.textColor, opacity: 0.7 }}>
+            No links available.
+          </p>
+        ) : (
+          categories.map((category) => (
+            <div key={category} className="mb-1 sm:mb-2">
+              <h2
+                className="text-xs sm:text-base font-bold mb-1 uppercase tracking-wide"
+                style={{ color: theme.primaryColor, opacity: 0.8 }}
+              >
+                {category}
+              </h2>
+              <div className="flex flex-col gap-1 sm:gap-2">
+                {groupedLinks[category].map((link) => {
+                  const Icon = iconMap[link.iconType] || LinkIcon;
+                  return (
+                    <button
+                      key={link.id}
+                      onClick={() => handleLinkClick(link.id, link.url)}
+                      className={`flex items-center gap-1 sm:gap-3 font-bold px-3 sm:px-6 py-2 sm:py-3 rounded-full shadow transition w-full text-left text-xs sm:text-base ${
+                        link.id === topLink?.id
+                          ? "ring-2 ring-yellow-400 bg-yellow-100"
+                          : ""
+                      }`}
+                      style={{
+                        background: link.id === topLink?.id ? "#fef08a" : theme.primaryColor,
+                        color: link.id === topLink?.id ? "#92400e" : theme.backgroundColor,
+                        fontFamily: theme.fontFamily,
+                        textDecoration: "none",
+                      }}
+                    >
+                      <Icon className="w-3 h-3 sm:w-5 sm:h-5" />
+                      {link.title}
+                      {typeof link.clicks === "number" && (
+                        <span className="ml-auto text-[10px] sm:text-sm opacity-70">
+                          {link.clicks} clicks
+                        </span>
+                      )}
+                      {link.id === topLink?.id && (
+                        <span className="ml-1 px-1 py-0.5 bg-yellow-400 text-yellow-900 rounded text-[10px] sm:text-xs font-semibold">
+                          Top
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  </div>
+
+  {/* QR Code always visible - bottom left */}
+  <div className="fixed bottom-2 left-2 sm:bottom-6 sm:left-6 z-50 flex flex-col items-center">
+    <QRCodeCanvas
+      id="profile-qr"
+      value={window.location.href}
+      size={50}
+      sm:size={80}
+      bgColor="#fff"
+      fgColor="#000"
+      level="H"
+      includeMargin={true}
+      style={{
+        borderRadius: "12px",
+        boxShadow: "0 2px 8px 0 rgba(0,0,0,0.10)",
+        background: "#fff",
+      }}
+    />
+    <span
+      className="mt-1 text-[9px] sm:text-sm font-semibold"
+      style={{
+        color: getContrastColor(theme.backgroundColor),
+        background: "rgba(255,255,255,0.7)",
+        borderRadius: "6px",
+        padding: "1px 4px",
+      }}
+    >
+      Scan Me
+    </span>
+  </div>
+  </div>
+
   );
 };
 
