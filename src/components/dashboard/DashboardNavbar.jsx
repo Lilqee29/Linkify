@@ -1,19 +1,52 @@
-import React, { useState } from "react";
-import { useAuth } from "../../contexts/authContext"; // adjust path if needed
-import { logOutUser } from "../../firebase/logout"; // centralized logout
+import React, { useState, useEffect } from "react";
+import { useAuth } from "../../contexts/authContext"; 
+import { logOutUser } from "../../firebase/logout"; 
 import { useNavigate, Link } from "react-router-dom";
 import logo from "../../assets/logo.png";
-import defaultAvatar from "../../assets/avatar.png"; // default avatar
-import UserSidebar from "./UserSidebar"; // import your sidebar
+import defaultAvatar from "../../assets/avatar.png"; 
+import UserSidebar from "./UserSidebar"; 
 import { Pencil, LogOut } from "lucide-react";
+import { doc, onSnapshot } from "firebase/firestore"; // use onSnapshot for live updates
+import { db } from "../../firebase/firebase"; 
 
 const DashboardNavbar = ({ onEditProfilePic }) => {
   const { currentUser } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [username, setUsername] = useState("User"); // state for username
   const navigate = useNavigate();
 
-  const username = currentUser?.displayName || currentUser?.email || "User";
-  const avatarSrc = currentUser?.photoURL || defaultAvatar; // dynamic avatar
+  // fetch username from Firestore when user logs in
+useEffect(() => {
+  if (!currentUser) return;
+
+  const userRef = doc(db, "users", currentUser.uid);
+
+  // 👇 listen to live changes so it updates instantly when sidebar saves
+  const unsubscribe = onSnapshot(userRef, (snapshot) => {
+    if (snapshot.exists()) {
+      const data = snapshot.data();
+      setUsername(
+        data.username || 
+        currentUser.displayName || 
+        currentUser.email?.split("@")[0] || 
+        "User"
+      );
+    } else {
+      // fallback if no Firestore doc exists
+      setUsername(
+        currentUser.displayName || 
+        currentUser.email?.split("@")[0] || 
+        "User"
+      );
+    }
+  });
+
+  // cleanup listener
+  return () => unsubscribe();
+}, [currentUser]);
+
+
+  const avatarSrc = currentUser?.photoURL || defaultAvatar; 
 
   const handleSidebarToggle = () => {
     setSidebarOpen(!sidebarOpen);
@@ -21,8 +54,8 @@ const DashboardNavbar = ({ onEditProfilePic }) => {
 
   const handleLogout = async () => {
     try {
-      await logOutUser(); // log out
-      navigate("/login"); // redirect to login page
+      await logOutUser(); 
+      navigate("/login"); 
     } catch (err) {
       alert("Logout failed: " + err.message);
     }

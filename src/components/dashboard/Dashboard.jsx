@@ -7,6 +7,8 @@ import { useDashboardLinks } from "../../firebase/Dashboardlink"; // adjust path
 import { useDashboardProfile } from "../../firebase/Dashboardbio"; // adjust path
 import { useDashboardProfilePic } from "../../firebase/DashboardprofilePic"; // adjust path
 import { useDashboardTheme } from "../../firebase/useDashboardtheme"; // adjust path
+import { doc, onSnapshot } from "firebase/firestore";
+import { db } from "../../firebase/firebase";
 
 
 
@@ -35,10 +37,47 @@ const Dashboard = () => {
   // eslint-disable-next-line no-unused-vars
   const { currentUser, updateProfile } = useAuth();
   const navigate = useNavigate();
-  const username =
-    currentUser?.displayName ||
-    currentUser?.email?.split("@")[0] ||
-    "User";
+   const [username, setUsername] = useState("User");
+
+useEffect(() => {
+  if (!currentUser) return;
+
+  const userRef = doc(db, "users", currentUser.uid);
+
+  const unsubscribe = onSnapshot(userRef, (snapshot) => {
+    if (snapshot.exists()) {
+      const data = snapshot.data();
+      if (data.username) {
+        // 🔹 Firestore username takes priority
+        setUsername(data.username);
+      } else {
+        // 🔹 fallback to Google/displayName or email
+        setUsername(
+          currentUser.displayName ||
+          currentUser.email?.split("@")[0] ||
+          "User"
+        );
+      }
+    } else {
+      // 🔹 If no doc, still use Google/displayName or email
+      setUsername(
+        currentUser.displayName ||
+        currentUser.email?.split("@")[0] ||
+        "User"
+      );
+    }
+  });
+
+  return () => unsubscribe();
+}, [currentUser]);
+
+
+
+
+  // const username =
+  //   currentUser?.displayName ||
+  //   currentUser?.email?.split("@")[0] ||
+  //   "User";
 
   // ------------------- State -------------------
  

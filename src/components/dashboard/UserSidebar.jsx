@@ -1,17 +1,26 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/authContext";
-import { EllipsisVertical } from "lucide-react";
+import { X } from "lucide-react";
 import { doc, setDoc, getDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
+import { deleteUser, updatePassword, getAuth } from "firebase/auth"; // 🔹 for auth actions
+
+
 
 const UserSidebar = ({ isOpen, onClose }) => {
   const { currentUser } = useAuth();
-  const [username, setUsername] = useState(currentUser?.displayName || currentUser?.email || "User");
+  const [username, setUsername] = useState(
+    currentUser?.displayName || currentUser?.email || "User"
+  );
   const avatarSrc = currentUser?.photoURL || null;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newUsername, setNewUsername] = useState("");
   const [timeLeft, setTimeLeft] = useState(0);
+
+  // 🔹 password change modal
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
 
   // Fetch username and deletion request from Firestore
   useEffect(() => {
@@ -39,7 +48,7 @@ const UserSidebar = ({ isOpen, onClose }) => {
     if (timeLeft <= 0) return;
 
     const interval = setInterval(() => {
-      setTimeLeft(prev => {
+      setTimeLeft((prev) => {
         if (prev <= 1000) {
           clearInterval(interval);
           deleteUserAccount(); // Delete after countdown
@@ -73,9 +82,13 @@ const UserSidebar = ({ isOpen, onClose }) => {
     if (!currentUser) return;
     const userRef = doc(db, "users", currentUser.uid);
     const now = Date.now();
-    const expiresAt =  now + 10 * 1000; // 30 minutes
+    const expiresAt = now + 10 * 1000; // currently 10s for test; set 30*60*1000 for 30 mins
 
-    await setDoc(userRef, { deleteRequest: { requestedAt: now, expiresAt } }, { merge: true });
+    await setDoc(
+      userRef,
+      { deleteRequest: { requestedAt: now, expiresAt } },
+      { merge: true }
+    );
     setTimeLeft(expiresAt - now);
     alert("Account deletion scheduled! You have 30 minutes to cancel.");
   };
@@ -89,21 +102,52 @@ const UserSidebar = ({ isOpen, onClose }) => {
     alert("Account deletion canceled.");
   };
 
-  // Delete user permanently
-  const deleteUserAccount = async () => {
-    if (!currentUser) return;
-    const userRef = doc(db, "users", currentUser.uid);
-    try {
-      await deleteDoc(userRef);
+  // 🔹 Delete user permanently (Firestore + Auth)
+const deleteUserAccount = async () => {
+  if (!currentUser) return;
+
+  const userRef = doc(db, "users", currentUser.uid);
+  const auth = getAuth(); // 👈 get the actual auth instance
+  const user = auth.currentUser; // 👈 Firebase user object
+
+  try {
+    // Delete Firestore document
+    await deleteDoc(userRef);
+
+    // Delete Auth account (must be real Firebase user)
+    if (user) {
+      await deleteUser(user);
       alert("Account deleted permanently!");
-      // Optional: sign out user here if using Firebase auth
+    } else {
+      alert("No authenticated user found.");
+    }
+  } catch (err) {
+    console.error("Error deleting user:", err);
+    if (err.code === "auth/requires-recent-login") {
+      alert("You need to log in again before deleting your account.");
+    } else {
+      alert("Failed to delete account. Try again.");
+    }
+  }
+};
+
+
+  // 🔹 Change password
+  const handlePasswordChange = async () => {
+    if (!newPassword) return;
+    try {
+      await updatePassword(currentUser, newPassword);
+      alert("Password updated successfully!");
+      setIsPasswordModalOpen(false);
+      setNewPassword("");
     } catch (err) {
-      console.error("Error deleting user:", err);
+      console.error("Error updating password:", err);
+      alert("Failed to update password. You might need to re-login.");
     }
   };
 
   // Convert timeLeft to minutes:seconds format
-  const formatTime = ms => {
+  const formatTime = (ms) => {
     const totalSeconds = Math.ceil(ms / 1000);
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
@@ -119,7 +163,7 @@ const UserSidebar = ({ isOpen, onClose }) => {
       <div className="flex justify-between items-center p-4 border-b border-orange-500">
         <h2 className="text-xl font-bold text-white">Account</h2>
         <button onClick={onClose} className="text-white hover:text-orange-500">
-          <EllipsisVertical size={24} />
+          <X size={24} />
         </button>
       </div>
 
@@ -128,7 +172,11 @@ const UserSidebar = ({ isOpen, onClose }) => {
         <div className="flex flex-col items-center p-4">
           <div className="w-32 h-32 rounded-full bg-orange-500 flex items-center justify-center text-5xl font-bold text-white mb-2 overflow-hidden">
             {avatarSrc ? (
-              <img src={avatarSrc} alt="Avatar" className="w-full h-full object-cover" />
+              <img
+                src={avatarSrc}
+                alt="Avatar"
+                className="w-full h-full object-cover"
+              />
             ) : (
               username.charAt(0).toUpperCase()
             )}
@@ -140,7 +188,10 @@ const UserSidebar = ({ isOpen, onClose }) => {
           {timeLeft > 0 && (
             <div className="p-2 bg-red-600 text-white rounded mt-2 flex items-center justify-between w-full">
               <span>Account will be deleted in {formatTime(timeLeft)}</span>
-              <button onClick={cancelDeletion} className="ml-2 px-2 py-1 bg-gray-700 rounded">
+              <button
+                onClick={cancelDeletion}
+                className="ml-2 px-2 py-1 bg-gray-700 rounded"
+              >
                 Cancel
               </button>
             </div>
@@ -154,6 +205,16 @@ const UserSidebar = ({ isOpen, onClose }) => {
             >
               Change Username
             </button>
+
+            {/* Only show password change if user signed in with email/password */}
+            {currentUser?.providerData[0]?.providerId === "password" && (
+              <button
+                onClick={() => setIsPasswordModalOpen(true)}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-full text-sm font-semibold transition"
+              >
+                Change Password
+              </button>
+            )}
 
             <button
               onClick={handleDeleteAccount}
@@ -169,7 +230,9 @@ const UserSidebar = ({ isOpen, onClose }) => {
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-black p-6 rounded-2xl w-80 border border-orange-500">
-            <h2 className="text-xl font-bold mb-4 text-white">Change Username</h2>
+            <h2 className="text-xl font-bold mb-4 text-white">
+              Change Username
+            </h2>
             <div className="flex flex-col gap-4">
               <input
                 type="text"
@@ -188,6 +251,40 @@ const UserSidebar = ({ isOpen, onClose }) => {
                 <button
                   onClick={handleSaveUsername}
                   className="px-4 py-2 rounded bg-orange-500 hover:bg-orange-600 text-white"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal for Changing Password */}
+      {isPasswordModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-black p-6 rounded-2xl w-80 border border-blue-500">
+            <h2 className="text-xl font-bold mb-4 text-white">
+              Change Password
+            </h2>
+            <div className="flex flex-col gap-4">
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password"
+                className="p-2 border border-blue-500 rounded bg-black text-white placeholder-white"
+              />
+              <div className="flex justify-end gap-2 mt-2">
+                <button
+                  onClick={() => setIsPasswordModalOpen(false)}
+                  className="px-4 py-2 rounded bg-gray-700 hover:bg-gray-800 text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handlePasswordChange}
+                  className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   Save
                 </button>
