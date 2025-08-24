@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/authContext";
-import { PlusCircle, Eye, Edit2, Trash2, X, User, Image as ImageIcon, Palette, Pi } from "lucide-react";
+import { PlusCircle, Eye, Edit2, Trash2, X, User, Image as ImageIcon, Palette, Pi, Share } from "lucide-react";
 import DashboardNavbar from "./DashboardNavbar";
 import { useNavigate } from "react-router-dom";
 import { useDashboardLinks } from "../../firebase/Dashboardlink"; // adjust path
@@ -39,37 +39,31 @@ const Dashboard = () => {
   const navigate = useNavigate();
    const [username, setUsername] = useState("User");
 
-useEffect(() => {
-  if (!currentUser) return;
+  useEffect(() => {
+    if (!currentUser) return;
 
-  const userRef = doc(db, "users", currentUser.uid);
+    const userRef = doc(db, "users", currentUser.uid);
 
-  const unsubscribe = onSnapshot(userRef, (snapshot) => {
-    if (snapshot.exists()) {
-      const data = snapshot.data();
-      if (data.username) {
-        // 🔹 Firestore username takes priority
-        setUsername(data.username);
+    const unsubscribe = onSnapshot(userRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data.username) {
+          // 🔹 Firestore username takes priority
+          setUsername(data.username);
+        } else {
+          // 🔹 fallback to Google/displayName or email
+          const fallbackUsername = currentUser.displayName || currentUser.email?.split("@")[0] || "User";
+          setUsername(fallbackUsername);
+        }
       } else {
-        // 🔹 fallback to Google/displayName or email
-        setUsername(
-          currentUser.displayName ||
-          currentUser.email?.split("@")[0] ||
-          "User"
-        );
+        // 🔹 If no doc, still use Google/displayName or email
+        const fallbackUsername = currentUser.displayName || currentUser.email?.split("@")[0] || "User";
+        setUsername(fallbackUsername);
       }
-    } else {
-      // 🔹 If no doc, still use Google/displayName or email
-      setUsername(
-        currentUser.displayName ||
-        currentUser.email?.split("@")[0] ||
-        "User"
-      );
-    }
-  });
+    });
 
-  return () => unsubscribe();
-}, [currentUser]);
+    return () => unsubscribe();
+  }, [currentUser]);
 
 
 
@@ -242,6 +236,33 @@ const saveProfilePic = async () => {
     });
   };
 
+  const handleShare = () => {
+    const publicUrl = `${window.location.origin}/${username}`;
+    
+    if (navigator.share) {
+      // Use native sharing if available
+      navigator.share({
+        title: `${username}'s Links`,
+        text: `Check out ${username}'s links on Linkly!`,
+        url: publicUrl,
+      });
+    } else {
+      // Fallback to copying to clipboard
+      navigator.clipboard.writeText(publicUrl).then(() => {
+        alert("Link copied to clipboard! 📋\n\nShare this link with others to show them your profile.");
+      }).catch(() => {
+        // Fallback for older browsers
+        const textArea = document.createElement("textarea");
+        textArea.value = publicUrl;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+        alert("Link copied to clipboard! 📋\n\nShare this link with others to show them your profile.");
+      });
+    }
+  };
+
   // ------------------- Bio Save -------------------
   // const handleSaveBio = async () => {
   //   try {
@@ -403,6 +424,12 @@ useEffect(() => {
             className="flex items-center justify-center gap-2 font-bold py-3 px-6 rounded-xl transition border border-orange-500 text-orange-500 bg-transparent"
           >
             <Eye /> Preview Links
+          </button>
+          <button
+            onClick={handleShare}
+            className="flex items-center justify-center gap-2 font-bold py-3 px-6 rounded-xl transition border border-green-500 text-green-500 bg-transparent hover:bg-green-500 hover:text-black"
+          >
+            <Share /> Share Link
           </button>
         </div>
 

@@ -18,6 +18,7 @@ import Register from "./components/auth/register";
 import Dashboard from "./components/dashboard/Dashboard";
 import DashboardNavbar from "./components/dashboard/DashboardNavbar"; // ✅ new import
 import UserProfile from "./public/UserProfile";
+import PublicProfile from "./public/PublicProfile";
 
 // Context
 import { AuthProvider, useAuth } from "./contexts/authContext";
@@ -70,6 +71,7 @@ function App() {
       ),
     },
     { path: "/profile/:username", element: <UserProfile /> },
+    { path: "/:username", element: <PublicProfile /> }, // Public shared link route
     { path: "*", element: <Landing /> }, // fallback
   ];
 

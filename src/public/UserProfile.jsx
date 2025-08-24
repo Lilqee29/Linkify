@@ -65,15 +65,29 @@ const UserProfile = () => {
     };
   }, []);
 
-  // eslint-disable-next-line no-unused-vars
   const handleShare = () => {
+    const publicUrl = `${window.location.origin}/${username}`;
+    
     if (navigator.share) {
       navigator.share({
         title: `${username}'s Links`,
-        url: window.location.href,
+        text: `Check out ${username}'s links on Linkly!`,
+        url: publicUrl,
       });
     } else {
-      alert("Sharing not supported on this browser.");
+      // Fallback to copying to clipboard
+      navigator.clipboard.writeText(publicUrl).then(() => {
+        alert("Link copied to clipboard! 📋\n\nShare this link with others to show them your profile.");
+      }).catch(() => {
+        // Fallback for older browsers
+        const textArea = document.createElement("textarea");
+        textArea.value = publicUrl;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+        alert("Link copied to clipboard! 📋\n\nShare this link with others to show them your profile.");
+      });
     }
   };
 

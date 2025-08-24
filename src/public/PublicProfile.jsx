@@ -1,9 +1,11 @@
 // src/public/PublicProfile.jsx
 import React, { useEffect, useState } from "react";
-import { useParams, useLocation } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { FaDiscord, FaPinterest, FaReddit, FaSnapchat, FaTelegram, FaTiktok, FaWhatsapp } from "react-icons/fa";
-import { Instagram, Youtube, Twitter, Facebook, Github, Link as LinkIcon } from "lucide-react";
+import { Instagram, Youtube, Twitter, Facebook, Github, Link as LinkIcon, Share } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { db } from "../firebase/firebase";
 
 // Map icon type to components
 const iconMap = {
@@ -24,31 +26,99 @@ const iconMap = {
 
 const PublicProfile = () => {
   const { username } = useParams();
-  const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
-
   const [profileData, setProfileData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [localLinks, setLocalLinks] = useState([]);
 
   useEffect(() => {
-    const dataParam = searchParams.get("data");
-    if (dataParam) {
+    const fetchProfileData = async () => {
       try {
-        const decoded = JSON.parse(atob(dataParam));
-        setProfileData(decoded);
-      } catch (e) {
-        console.error("Failed to parse profile data", e);
+        setLoading(true);
+        
+        // Query all users to find the one with matching username
+        const usersRef = collection(db, "users");
+        const usernameQuery = query(usersRef, where("username", "==", username));
+        const usernameSnapshot = await getDocs(usernameQuery);
+        
+        if (!usernameSnapshot.empty) {
+          const userDoc = usernameSnapshot.docs[0];
+          const userData = userDoc.data();
+          const userId = userDoc.id;
+          
+          // Get the user's links from the links subcollection
+          const linksRef = collection(db, "users", userId, "links");
+          const linksSnapshot = await getDocs(linksRef);
+          const userLinks = linksSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          
+          const profileData = {
+            username: username,
+            links: userLinks || [],
+            bio: userData.bio || "Welcome to my links page 🚀",
+            profilePic: userData.photoURL || null,
+            theme: userData.customTheme || {
+              primaryColor: "#2563eb",
+              secondaryColor: "#10b981",
+              backgroundColor: "#f3f4f6",
+              textColor: "#111827",
+              fontFamily: "'Inter', sans-serif"
+            }
+          };
+          
+          setProfileData(profileData);
+          setLocalLinks(userLinks || []);
+        } else {
+          setError("Username not found");
+        }
+      } catch (err) {
+        console.error("Error fetching profile data:", err);
+        setError("Failed to load profile");
+      } finally {
+        setLoading(false);
       }
-    }
-  }, [searchParams]);
+    };
 
-  if (!profileData) {
-    return <p className="text-center mt-10">Invalid or missing profile data.</p>;
+    if (username) {
+      fetchProfileData();
+    }
+  }, [username]);
+
+  // Add Google Fonts
+  useEffect(() => {
+    if (!document.getElementById('google-fonts-public')) {
+      const link = document.createElement('link');
+      link.id = 'google-fonts-public';
+      link.rel = 'stylesheet';
+      link.href = 'https://fonts.googleapis.com/css2?family=Comic+Neue&family=Bubblegum+Sans&family=Fredoka+One&family=Bangers&family=Architects+Daughter&display=swap';
+      document.head.appendChild(link);
+    }
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !profileData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 text-lg">{error || "Profile not found"}</p>
+          <p className="text-gray-600 mt-2">The profile you're looking for doesn't exist.</p>
+        </div>
+      </div>
+    );
   }
 
   const { links, bio, profilePic, theme } = profileData;
   const quickLinks = links.slice(0, 3);
 
-  const [localLinks, setLocalLinks] = useState(links);
   const categories = [...new Set(localLinks.map(link => link.category || "None"))];
   const groupedLinks = categories.reduce((acc, cat) => {
     acc[cat] = localLinks.filter(link => (link.category || "None") === cat);
@@ -63,19 +133,45 @@ const PublicProfile = () => {
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
-  // Add Google Fonts
-  useEffect(() => {
-    if (!document.getElementById('google-fonts-public')) {
-      const link = document.createElement('link');
-      link.id = 'google-fonts-public';
-      link.rel = 'stylesheet';
-      link.href = 'https://fonts.googleapis.com/css2?family=Comic+Neue&family=Bubblegum+Sans&family=Fredoka+One&family=Bangers&family=Architects+Daughter&display=swap';
-      document.head.appendChild(link);
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: `${username}'s Links`,
+        text: `Check out ${username}'s links on Linkly!`,
+        url: window.location.href,
+      });
+    } else {
+      // Fallback to copying to clipboard
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        alert("Link copied to clipboard! 📋");
+      }).catch(() => {
+        // Fallback for older browsers
+        const textArea = document.createElement("textarea");
+        textArea.value = window.location.href;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+        alert("Link copied to clipboard! 📋");
+      });
     }
-  }, []);
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-start px-2 py-4 sm:px-6 sm:py-12" style={{ background: theme.backgroundColor, fontFamily: theme.fontFamily }}>
+      
+      {/* Share Button - Top Right Corner */}
+      <button
+        onClick={handleShare}
+        className="fixed top-2 right-2 sm:top-6 sm:right-6 p-2 sm:p-3 rounded-full shadow flex items-center justify-center z-50 transition hover:scale-110"
+        style={{
+          background: theme.primaryColor,
+          color: theme.backgroundColor,
+          border: `1px solid ${theme.secondaryColor}`,
+        }}
+      >
+        <Share className="w-4 h-4 sm:w-5 sm:h-5" />
+      </button>
       
       <div className="w-full sm:max-w-md bg-white/90 rounded-3xl shadow-2xl flex flex-col items-center relative mt-12 sm:mt-16" style={{ border: `2px solid ${theme.primaryColor}` }}>
         
@@ -97,31 +193,37 @@ const PublicProfile = () => {
               const Icon = iconMap[link.iconType] || LinkIcon;
               return (
                 <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer" className="p-2 sm:p-3 rounded-full shadow flex items-center justify-center transition hover:scale-105" style={{ background: theme.secondaryColor, color: theme.backgroundColor }}>
-                  <Icon className="w-4 h-4 sm:w-6 sm:h-6" />
+                  <Icon className="w-4 h-4 sm:w-6 sm:w-6" />
                 </a>
               );
             })}
           </div>
 
           <div className="w-full flex flex-col gap-2 sm:gap-3">
-            {categories.map(category => (
-              <div key={category} className="mb-1 sm:mb-2">
-                <h2 className="text-xs sm:text-base font-bold mb-1 uppercase tracking-wide" style={{ color: theme.primaryColor, opacity: 0.8 }}>{category}</h2>
-                <div className="flex flex-col gap-1 sm:gap-2">
-                  {groupedLinks[category].map(link => {
-                    const Icon = iconMap[link.iconType] || LinkIcon;
-                    return (
-                      <button key={link.id} onClick={() => handleLinkClick(link.id, link.url)} className={`flex items-center gap-1 sm:gap-3 font-bold px-3 sm:px-6 py-2 sm:py-3 rounded-full shadow transition w-full text-left text-xs sm:text-base ${link.id === topLink?.id ? "ring-2 ring-yellow-400 bg-yellow-100" : ""}`} style={{ background: link.id === topLink?.id ? "#fef08a" : theme.primaryColor, color: link.id === topLink?.id ? "#92400e" : theme.backgroundColor, fontFamily: theme.fontFamily }}>
-                        <Icon className="w-3 h-3 sm:w-5 sm:h-5" />
-                        {link.title}
-                        {typeof link.clicks === "number" && <span className="ml-auto text-[10px] sm:text-sm opacity-70">{link.clicks} clicks</span>}
-                        {link.id === topLink?.id && <span className="ml-1 px-1 py-0.5 bg-yellow-400 text-yellow-900 rounded text-[10px] sm:text-xs font-semibold">Top</span>}
-                      </button>
-                    );
-                  })}
+            {categories.length === 0 ? (
+              <p className="text-center text-xs sm:text-sm" style={{ color: theme.textColor, opacity: 0.7 }}>
+                No links available.
+              </p>
+            ) : (
+              categories.map(category => (
+                <div key={category} className="mb-1 sm:mb-2">
+                  <h2 className="text-xs sm:text-base font-bold mb-1 uppercase tracking-wide" style={{ color: theme.primaryColor, opacity: 0.8 }}>{category}</h2>
+                  <div className="flex flex-col gap-1 sm:gap-2">
+                    {groupedLinks[category].map(link => {
+                      const Icon = iconMap[link.iconType] || LinkIcon;
+                      return (
+                        <button key={link.id} onClick={() => handleLinkClick(link.id, link.url)} className={`flex items-center gap-1 sm:gap-3 font-bold px-3 sm:px-6 py-2 sm:py-3 rounded-full shadow transition w-full text-left text-xs sm:text-base ${link.id === topLink?.id ? "ring-2 ring-yellow-400 bg-yellow-100" : ""}`} style={{ background: link.id === topLink?.id ? "#fef08a" : theme.primaryColor, color: link.id === topLink?.id ? "#92400e" : theme.backgroundColor, fontFamily: theme.fontFamily }}>
+                          <Icon className="w-3 h-3 sm:w-5 sm:h-5" />
+                          {link.title}
+                          {typeof link.clicks === "number" && <span className="ml-auto text-[10px] sm:text-sm opacity-70">{link.clicks} clicks</span>}
+                          {link.id === topLink?.id && <span className="ml-1 px-1 py-0.5 bg-yellow-400 text-yellow-900 rounded text-[10px] sm:text-xs font-semibold">Top</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>
