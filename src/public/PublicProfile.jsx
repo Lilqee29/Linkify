@@ -88,9 +88,9 @@ const PublicProfile = () => {
             bio: userData.bio || "Welcome to my links page 🚀",
             profilePic: userData.photoURL || null,
             theme: userData.customTheme || {
-              primaryColor: "#2563eb",
-              secondaryColor: "#10b981",
-              backgroundColor: "#f3f4f6",
+              primaryColor: "#f59e0b",
+              secondaryColor: "#ef4444",
+              backgroundColor: "#7c2d12",
               textColor: "#111827",
               fontFamily: "'Inter', sans-serif"
             }
