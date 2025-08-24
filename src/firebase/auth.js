@@ -8,6 +8,7 @@ import {
     sendEmailVerification,
     setPersistence,
     browserLocalPersistence,
+    signOut,
     
 } from 'firebase/auth';
 import { auth } from './firebase';
@@ -82,4 +83,36 @@ export const doSendEmailVerification = async () => {
     return sendEmailVerification(auth.currentUser, {
         url: `${window.location.origin}/home`,
     });
+};
+
+// Add this function to check email verification status
+export const checkEmailVerification = async (user) => {
+  try {
+    // Reload user to get latest verification status
+    await user.reload();
+    return user.emailVerified;
+  } catch (error) {
+    console.error("Error checking email verification:", error);
+    return false;
+  }
+};
+
+// Enhanced sign in function that checks email verification
+export const doSignInWithEmailAndPasswordWithVerification = async (email, password) => {
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+    
+    // Check if email is verified
+    if (!user.emailVerified) {
+      // Sign out the user since they're not verified
+      await signOut(auth);
+      throw new Error("Please verify your email before signing in. Check your inbox for the verification link.");
+    }
+    
+    return userCredential;
+  } catch (error) {
+    // Re-throw the error to be handled by the calling component
+    throw error;
+  }
 };

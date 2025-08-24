@@ -60,25 +60,25 @@ const Register = () => {
         <div className="w-full min-h-screen bg-black flex flex-col">
             <Navbar />
 
-            <main className="flex-grow flex items-center justify-center px-4">
+            <main className="flex-grow flex items-center justify-center px-4 py-8">
                 <div className="w-full max-w-md p-6 rounded-2xl shadow-2xl 
                                 bg-white/10 backdrop-blur-lg border border-white/20 
-                                text-gray-100 space-y-5">
+                                text-gray-100 space-y-4 sm:space-y-5">
                     
-                    <h3 className="text-center text-2xl font-semibold">Create an Account</h3>
+                    <h3 className="text-center text-xl sm:text-2xl font-semibold">Create an Account</h3>
 
-                    <form onSubmit={onSignUp} className="space-y-5">
+                    <form onSubmit={onSignUp} className="space-y-4 sm:space-y-5">
                         {/* Email */}
                         <div>
                             <label className="text-sm font-bold">Email</label>
-                            <div className="flex items-center mt-2 px-3 py-2 bg-white/10 rounded-lg border border-white/20">
-                                <Mail className="w-5 h-5 text-indigo-400 mr-2" />
+                            <div className="flex items-center mt-2 px-3 py-2.5 sm:py-2 bg-white/10 rounded-lg border border-white/20">
+                                <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400 mr-2" />
                                 <input
                                     type="email"
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full bg-transparent outline-none placeholder-gray-400 text-gray-100"
+                                    className="w-full bg-transparent outline-none placeholder-gray-400 text-gray-100 text-sm sm:text-base"
                                     placeholder="Enter your email"
                                 />
                             </div>
@@ -87,29 +87,37 @@ const Register = () => {
                         {/* Password */}
                         <div>
                             <label className="text-sm font-bold">Password</label>
-                            <div className="flex items-center mt-2 px-3 py-2 bg-white/10 rounded-lg border border-white/20">
-                                <Lock className="w-5 h-5 text-indigo-400 mr-2" />
+                            <div className="flex items-center mt-2 px-3 py-2.5 sm:py-2 bg-white/10 rounded-lg border border-white/20">
+                                <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400 mr-2" />
                                 <input
                                     type="password"
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full bg-transparent outline-none placeholder-gray-400 text-gray-100"
+                                    className="w-full bg-transparent outline-none placeholder-gray-400 text-gray-100 text-sm sm:text-base"
                                     placeholder="Enter your password"
                                 />
                             </div>
                         </div>
 
                         {/* Error / Success Messages */}
-                        {errorMessage && <div className="text-red-400 font-bold">{errorMessage}</div>}
-                        {successMessage && <div className="text-green-400 font-bold">{successMessage}</div>}
+                        {errorMessage && (
+                            <div className="text-red-400 font-bold text-sm p-3 bg-red-500/10 rounded-lg border border-red-500/20">
+                                {errorMessage}
+                            </div>
+                        )}
+                        {successMessage && (
+                            <div className="text-green-400 font-bold text-sm p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                                {successMessage}
+                            </div>
+                        )}
 
                         {/* Submit button */}
                         <button
                             type="submit"
                             disabled={isSigningUp}
-                            className={`w-full px-4 py-2 text-white font-medium rounded-lg 
-                                       transition ${isSigningUp
+                            className={`w-full px-4 py-3 sm:py-2.5 text-white font-medium rounded-lg 
+                                       transition text-sm sm:text-base ${isSigningUp
                                         ? 'bg-gray-400 cursor-not-allowed'
                                         : 'bg-indigo-600 hover:bg-indigo-700 hover:shadow-xl'}`}
                         >
@@ -117,7 +125,7 @@ const Register = () => {
                         </button>
                     </form>
 
-                    <p className="text-center text-sm text-gray-300">
+                    <p className="text-center text-xs sm:text-sm text-gray-300">
                         Already have an account?{' '}
                         <Link to="/login" className="font-bold text-indigo-400 hover:underline">
                             Sign in

@@ -20,6 +20,9 @@ import DashboardNavbar from "./components/dashboard/DashboardNavbar"; // ✅ new
 import UserProfile from "./public/UserProfile";
 import PublicProfile from "./public/PublicProfile";
 
+// Help Page
+import HelpPage from "./components/HelpPage";
+
 // Context
 import { AuthProvider, useAuth } from "./contexts/authContext";
 
@@ -72,6 +75,7 @@ function App() {
     },
     { path: "/profile/:username", element: <UserProfile /> },
     { path: "/:username", element: <PublicProfile /> }, // Public shared link route
+    { path: "/help", element: <HelpPage /> }, // New help route
     { path: "*", element: <Landing /> }, // fallback
   ];
 

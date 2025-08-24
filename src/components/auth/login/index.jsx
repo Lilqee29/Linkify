@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { Navigate, Link } from "react-router-dom";
-import { doSignInWithEmailAndPassword, doSignInWithGoogle } from "../../../firebase/auth";
+import { doSignInWithGoogle, doSignInWithEmailAndPasswordWithVerification } from "../../../firebase/auth";
 import { useAuth } from "../../../contexts/authContext";
 import Navbar from "../../Navbar";
-import { Mail, Lock } from "lucide-react";
+import { Mail, Lock, AlertCircle, CheckCircle, Shield, RefreshCw } from "lucide-react";
 
 const Login = () => {
   const { userLoggedIn } = useAuth();
@@ -12,15 +12,50 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [showVerificationHelp, setShowVerificationHelp] = useState(false);
+  const [isResendingVerification, setIsResendingVerification] = useState(false);
 
   const onSubmit = async (e) => {
     e.preventDefault();
     if (!isSigningIn) {
       setIsSigningIn(true);
+      setErrorMessage("");
       try {
-        await doSignInWithEmailAndPassword(email, password);
+        // Use the enhanced verification function
+        await doSignInWithEmailAndPasswordWithVerification(email, password);
       } catch (err) {
-        setErrorMessage(err.message);
+        // Handle specific Firebase auth errors
+        let userFriendlyMessage = err.message;
+        
+        switch (err.code) {
+          case 'auth/user-not-found':
+            userFriendlyMessage = "No account found with this email address.";
+            break;
+          case 'auth/wrong-password':
+            userFriendlyMessage = "Incorrect password. Please try again.";
+            break;
+          case 'auth/invalid-email':
+            userFriendlyMessage = "Please enter a valid email address.";
+            break;
+          case 'auth/too-many-requests':
+            userFriendlyMessage = "Too many failed attempts. Please try again later.";
+            break;
+          case 'auth/user-disabled':
+            userFriendlyMessage = "This account has been disabled. Please contact support.";
+            break;
+          case 'auth/network-request-failed':
+            userFriendlyMessage = "Network error. Please check your internet connection.";
+            break;
+          default:
+            // Check if it's our custom verification error
+            if (err.message.includes("verify your email")) {
+              userFriendlyMessage = err.message;
+            } else {
+              userFriendlyMessage = err.message;
+            }
+        }
+        
+        setErrorMessage(userFriendlyMessage);
         setIsSigningIn(false);
       }
     }
@@ -30,12 +65,28 @@ const Login = () => {
     e.preventDefault();
     if (!isSigningIn) {
       setIsSigningIn(true);
+      setErrorMessage("");
       try {
         await doSignInWithGoogle();
       } catch (err) {
         setErrorMessage(err.message);
         setIsSigningIn(false);
       }
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (isResendingVerification) return;
+    
+    setIsResendingVerification(true);
+    try {
+      // This would need to be implemented to resend verification
+      // For now, show a message
+      setErrorMessage("Please check your email for the verification link. If you don't see it, check your spam folder.");
+    } catch {
+      setErrorMessage("Failed to resend verification email. Please try again.");
+    } finally {
+      setIsResendingVerification(false);
     }
   };
 
@@ -48,23 +99,23 @@ const Login = () => {
     <div className="relative min-h-screen bg-black">
       <Navbar />
 
-      <main className="flex items-center justify-center h-[calc(100vh-80px)] px-4">
-        <div className="w-full max-w-md p-8 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-2xl">
-          <h3 className="text-white text-2xl font-bold text-center">Welcome Back</h3>
-          <p className="text-gray-400 text-center mb-6">Login to continue</p>
+      <main className="flex items-center justify-center min-h-[calc(100vh-80px)] px-4 py-8">
+        <div className="w-full max-w-md p-6 sm:p-8 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-2xl">
+          <h3 className="text-white text-xl sm:text-2xl font-bold text-center">Welcome Back</h3>
+          <p className="text-gray-400 text-center mb-6 text-sm sm:text-base">Login to continue</p>
 
-          <form onSubmit={onSubmit} className="space-y-5">
+          <form onSubmit={onSubmit} className="space-y-4 sm:space-y-5">
             <div className="relative">
               <label className="text-sm text-gray-300 font-bold">Email</label>
-              <div className="flex items-center mt-2 bg-black/30 border border-white/20 rounded-lg px-3 py-2">
-                <Mail className="w-5 h-5 text-gray-400 mr-2" />
+              <div className="flex items-center mt-2 bg-black/30 border border-white/20 rounded-lg px-3 py-2.5 sm:py-2">
+                <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 mr-2" />
                 <input
                   type="email"
                   autoComplete="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-transparent text-white placeholder-gray-400 outline-none"
+                  className="w-full bg-transparent text-white placeholder-gray-400 outline-none text-sm sm:text-base"
                   placeholder="Enter your email"
                 />
               </div>
@@ -72,26 +123,31 @@ const Login = () => {
 
             <div className="relative">
               <label className="text-sm text-gray-300 font-bold">Password</label>
-              <div className="flex items-center mt-2 bg-black/30 border border-white/20 rounded-lg px-3 py-2">
-                <Lock className="w-5 h-5 text-gray-400 mr-2" />
+              <div className="flex items-center mt-2 bg-black/30 border border-white/20 rounded-lg px-3 py-2.5 sm:py-2">
+                <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 mr-2" />
                 <input
                   type="password"
                   autoComplete="current-password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-transparent text-white placeholder-gray-400 outline-none"
+                  className="w-full bg-transparent text-white placeholder-gray-400 outline-none text-sm sm:text-base"
                   placeholder="Enter your password"
                 />
               </div>
             </div>
 
-            {errorMessage && <span className="text-red-500 font-medium">{errorMessage}</span>}
+            {errorMessage && (
+              <div className="flex items-center gap-2 text-red-400 font-medium p-3 bg-red-500/10 rounded-lg border border-red-500/20 text-sm">
+                <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                <span className="break-words">{errorMessage}</span>
+              </div>
+            )}
 
             <button
               type="submit"
               disabled={isSigningIn}
-              className={`w-full px-4 py-2 text-white font-semibold rounded-lg transition-all duration-300 ${
+              className={`w-full px-4 py-3 sm:py-2.5 text-white font-semibold rounded-lg transition-all duration-300 text-sm sm:text-base ${
                 isSigningIn ? "bg-gray-500 cursor-not-allowed" : "bg-orange-600 hover:bg-orange-700 hover:shadow-lg"
               }`}
             >
@@ -99,32 +155,65 @@ const Login = () => {
             </button>
           </form>
 
-          <p className="text-center text-sm text-gray-400 mt-4">
-            Don't have an account?{" "}
-            <Link to="/register" className="text-orange-400 hover:underline font-bold">
-              Sign up
-            </Link>
-          </p>
-
-          <div className="flex items-center my-6">
-            <div className="flex-grow border-t border-gray-500"></div>
-            <span className="mx-2 text-gray-400 text-sm font-bold">OR</span>
-            <div className="flex-grow border-t border-gray-500"></div>
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => setShowVerificationHelp(!showVerificationHelp)}
+              className="text-orange-400 hover:text-orange-300 text-sm font-medium flex items-center justify-center gap-2 mx-auto"
+            >
+              <Shield className="w-4 h-4" />
+              Having trouble signing in?
+            </button>
           </div>
 
-          <button
-            disabled={isSigningIn}
-            onClick={onGoogleSignIn}
-            className="w-full flex items-center justify-center gap-x-3 py-2.5 bg-white/10 border border-white/20 rounded-lg text-white font-medium hover:bg-white/20 transition duration-300"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 48 48" fill="none">
-              <path d="M47.5 24.55c0-1.63-.13-3.27-.41-4.87H24.48v9.24h12.96c-.54 2.98-2.27 5.61-4.8 7.29v5.99h7.74c4.54-4.18 7.14-10.35 7.14-17.65Z" fill="#4285F4" />
-              <path d="M24.48 48c6.47 0 11.93-2.13 15.9-5.79l-7.73-5.99c-2.16 1.46-4.94 2.29-8.17 2.29-6.25 0-11.54-4.23-13.46-9.91H3.03v6.18C7.1 42.9 15.41 48 24.48 48Z" fill="#34A853" />
-              <path d="M11 28.6c-1-2.98-1-6.2 0-9.19V13.23H3.03c-3.4 6.78-3.4 15.77 0 22.56L11 28.6Z" fill="#FBBC04" />
-              <path d="M24.48 9.5c3.42 0 6.74 1.18 9.34 3.5l7.76-7.25C36.2 2.17 30.44-.07 24.48 0 15.4 0 7.1 5.12 3.03 13.23l7.96 6.18C12.9 13.72 18.22 9.5 24.48 9.5Z" fill="#EA4335" />
-            </svg>
-            {isSigningIn ? "Signing In..." : "Continue with Google"}
-          </button>
+          {showVerificationHelp && (
+            <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+              <h4 className="text-blue-400 font-semibold mb-2 flex items-center gap-2 text-sm sm:text-base">
+                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+                Common Login Issues
+              </h4>
+              <ul className="text-blue-300 text-xs sm:text-sm space-y-1">
+                <li>• Make sure your email is verified</li>
+                <li>• Check your spam folder for verification emails</li>
+                <li>• Verification links expire after 2 minutes</li>
+                <li>• Ensure caps lock is off when typing password</li>
+                <li>• Try using the "Forgot Password" option</li>
+              </ul>
+              
+              {errorMessage && errorMessage.includes("verify your email") && (
+                <div className="mt-3 pt-3 border-t border-blue-500/20">
+                  <button
+                    onClick={handleResendVerification}
+                    disabled={isResendingVerification}
+                    className="flex items-center gap-2 text-blue-400 hover:text-blue-300 text-xs sm:text-sm font-medium"
+                  >
+                    <RefreshCw className={`w-3 h-3 sm:w-4 sm:h-4 ${isResendingVerification ? 'animate-spin' : ''}`} />
+                    {isResendingVerification ? 'Sending...' : 'Resend Verification Email'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="mt-6 text-center">
+            <button
+              onClick={onGoogleSignIn}
+              disabled={isSigningIn}
+              className={`w-full px-4 py-3 sm:py-2.5 text-white font-semibold rounded-lg border border-white/20 transition-all duration-300 text-sm sm:text-base ${
+                isSigningIn ? "bg-gray-500 cursor-not-allowed" : "bg-black/30 hover:bg-black/50 hover:border-white/40"
+              }`}
+            >
+              {isSigningIn ? "Signing In..." : "Continue with Google"}
+            </button>
+          </div>
+
+          <div className="mt-6 text-center">
+            <p className="text-gray-400 text-xs sm:text-sm">
+              Don't have an account?{" "}
+              <Link to="/register" className="text-orange-400 hover:text-orange-300 font-semibold">
+                Sign up
+              </Link>
+            </p>
+          </div>
         </div>
       </main>
     </div>

@@ -1,4 +1,4 @@
-import { Menu, X, Pencil, LogOut } from "lucide-react";
+import { Menu, X, LogOut } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import logo from "../assets/logo.png";
@@ -27,14 +27,14 @@ const Navbar = ({ onEditProfilePic }) => {
   const avatarSrc = currentUser?.photoURL || "/default-avatar.png";
 
   return (
-    <nav className="sticky top-0 z-50 py-3 backdrop-blur-lg border-b border-neutral-700/80">
-      <div className="container px-4 mx-auto relative lg:text-sm">
+    <nav className="sticky top-0 z-50 py-3 bg-black border-b border-neutral-700 lg:backdrop-blur-lg lg:bg-black/95">
+      <div className="container px-4 mx-auto relative">
         <div className="flex justify-between items-center">
           {/* Logo */}
           <div className="flex items-center flex-shrink-0">
             <Link to="/#" className="flex items-center">
-              <img className="h-10 w-10 mr-2" src={logo} alt="Logo" />
-              <span className="text-xl tracking-tight">Linkly</span>
+              <img className="h-8 w-8 sm:h-10 sm:w-10 mr-2" src={logo} alt="Logo" />
+              <span className="text-lg sm:text-xl tracking-tight text-white font-bold">Linkly</span>
             </Link>
           </div>
 
@@ -42,7 +42,12 @@ const Navbar = ({ onEditProfilePic }) => {
           <ul className="hidden lg:flex ml-14 space-x-12">
             {navItems.map((item, index) => (
               <li key={index}>
-                <Link to={item.href}>{item.label}</Link>
+                <Link 
+                  to={item.href} 
+                  className="text-gray-300 hover:text-white transition-colors duration-200 font-medium"
+                >
+                  {item.label}
+                </Link>
               </li>
             ))}
           </ul>
@@ -51,7 +56,7 @@ const Navbar = ({ onEditProfilePic }) => {
           <div className="hidden lg:flex items-center space-x-4">
             {currentUser ? (
               <div className="flex items-center space-x-3">
-                {/* Avatar + Pencil */}
+                {/* Avatar */}
                 <div className="relative">
                   <img
                     src={avatarSrc}
@@ -74,70 +79,122 @@ const Navbar = ({ onEditProfilePic }) => {
               <>
                 <Link
                   to="/login"
-                  className="py-2 px-3 border rounded-md hover:bg-gray-100 transition duration-300"
+                  className="py-2 px-4 border border-white/20 rounded-md text-white hover:bg-neutral-800 transition duration-300 font-medium"
                 >
                   Sign In
                 </Link>
 
                 <Link
                   to="/register"
-                  className="bg-gradient-to-r from-orange-500 to-orange-800 py-2 px-3 rounded-md text-white hover:opacity-90 transition duration-300"
+                  className="bg-gradient-to-r from-orange-500 to-orange-700 py-2 px-4 rounded-md text-white hover:from-orange-600 hover:to-orange-800 transition duration-300 font-medium"
                 >
-                  Create an account
+                  Create Account
                 </Link>
               </>
             )}
           </div>
 
-          {/* Mobile Hamburger */}
-          <div className="lg:hidden md:flex flex-col justify-end">
-            <button onClick={toggleNavbar}>
-              {mobileDrawerOpen ? <X /> : <Menu />}
+          {/* Mobile Menu Button */}
+          <div className="lg:hidden">
+            <button 
+              onClick={toggleNavbar}
+              className="p-2 text-white hover:bg-neutral-800 rounded-lg transition-colors"
+              aria-label="Toggle mobile menu"
+            >
+              {mobileDrawerOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
         </div>
 
         {/* Mobile Drawer */}
         {mobileDrawerOpen && (
-          <div className="fixed right-0 z-20 bg-neutral-900 w-full p-12 flex flex-col justify-center items-center lg:hidden">
-            <ul>
-              {navItems.map((item, index) => (
-                <li key={index} className="py-4">
-                  <Link to={item.href} className="hover:text-indigo-400 transition">
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-            <div className="flex space-x-6 mt-6">
-              {currentUser ? (
-                <>
-                  <img
-                    src={avatarSrc}
-                    alt="User Avatar"
-                    className="w-8 h-8 rounded-full border-2 border-orange-500"
-                  />
-                  <span className="text-white">{username}</span>
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center justify-center p-2 rounded-full bg-red-600 hover:bg-red-700 transition"
+          <div className="lg:hidden">
+            {/* Backdrop */}
+            <div 
+              className="fixed inset-0 bg-black/80 z-40"
+              onClick={() => setMobileDrawerOpen(false)}
+            />
+            
+            {/* Drawer */}
+            <div className="fixed right-0 top-0 h-full w-80 max-w-[85vw] bg-black border-l border-neutral-800 z-50 transform transition-transform duration-300 ease-in-out">
+              <div className="flex flex-col h-full">
+                {/* Header */}
+                <div className="flex items-center justify-between p-6 border-b border-neutral-800">
+                  <h2 className="text-xl font-bold text-white">Menu</h2>
+                  <button 
+                    onClick={() => setMobileDrawerOpen(false)}
+                    className="p-2 text-white hover:bg-neutral-800 rounded-lg transition-colors"
                   >
-                    <LogOut size={16} className="text-white" />
+                    <X size={20} />
                   </button>
-                </>
-              ) : (
-                <>
-                  <Link to="/login" className="py-2 px-3 border rounded-md">
-                    Sign In
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="py-2 px-3 rounded-md bg-gradient-to-r from-orange-500 to-orange-800"
-                  >
-                    Create an account
-                  </Link>
-                </>
-              )}
+                </div>
+
+                {/* Navigation Items */}
+                <div className="flex-1 p-6">
+                  <ul className="space-y-4">
+                    {navItems.map((item, index) => (
+                      <li key={index}>
+                        <Link 
+                          to={item.href} 
+                          className="block py-3 px-4 text-white hover:bg-neutral-800 rounded-lg transition-colors font-medium"
+                          onClick={() => setMobileDrawerOpen(false)}
+                        >
+                          {item.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* User Section */}
+                <div className="p-6 border-t border-neutral-800">
+                  {currentUser ? (
+                    <div className="space-y-4">
+                      {/* User Info */}
+                      <div className="flex items-center space-x-3 p-4 bg-neutral-900 rounded-lg">
+                        <img
+                          src={avatarSrc}
+                          alt="User Avatar"
+                          className="w-12 h-12 rounded-full border-2 border-orange-500"
+                        />
+                        <div>
+                          <p className="text-white font-semibold">{username}</p>
+                          <p className="text-gray-400 text-sm">Logged in</p>
+                        </div>
+                      </div>
+                      
+                      {/* Logout Button */}
+                      <button
+                        onClick={() => {
+                          handleLogout();
+                          setMobileDrawerOpen(false);
+                        }}
+                        className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium"
+                      >
+                        <LogOut size={18} />
+                        Sign Out
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <Link
+                        to="/login"
+                        className="block w-full py-3 px-4 text-center border border-neutral-700 text-white hover:bg-neutral-800 rounded-lg transition-colors font-medium"
+                        onClick={() => setMobileDrawerOpen(false)}
+                      >
+                        Sign In
+                      </Link>
+                      <Link
+                        to="/register"
+                        className="block w-full py-3 px-4 text-center bg-gradient-to-r from-orange-500 to-orange-700 text-white hover:from-orange-600 hover:to-orange-800 rounded-lg transition-colors font-medium"
+                        onClick={() => setMobileDrawerOpen(false)}
+                      >
+                        Create Account
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         )}

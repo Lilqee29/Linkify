@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { FaDiscord, FaPinterest, FaReddit, FaSnapchat, FaTelegram, FaTiktok, FaWhatsapp } from "react-icons/fa";
-import { Instagram, Youtube, Twitter, Facebook, Github, Link as LinkIcon, Share } from "lucide-react";
+import { Instagram, Youtube, Twitter, Facebook, Github, Link as LinkIcon, Share, CheckCircle, AlertCircle } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebase/firebase";
@@ -30,26 +30,57 @@ const PublicProfile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [localLinks, setLocalLinks] = useState([]);
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+    confirmText: "Got it!",
+    cancelText: "",
+    type: "info"
+  });
 
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
         setLoading(true);
+        console.log("🔍 Searching for username:", username);
         
         // Query all users to find the one with matching username
         const usersRef = collection(db, "users");
+        console.log("📚 Database reference created");
+        
+        // Try to get all users first to see what's in the database
+        try {
+          const allUsersSnapshot = await getDocs(usersRef);
+          console.log("📊 Total users in database:", allUsersSnapshot.size);
+          allUsersSnapshot.forEach(doc => {
+            const userData = doc.data();
+            console.log("👤 User:", userData.username, "ID:", doc.id);
+          });
+        } catch (allUsersErr) {
+          console.log("⚠️ Could not fetch all users:", allUsersErr);
+        }
+        
         const usernameQuery = query(usersRef, where("username", "==", username));
         const usernameSnapshot = await getDocs(usernameQuery);
+        
+        console.log("📊 Query result:", usernameSnapshot.size, "documents found");
         
         if (!usernameSnapshot.empty) {
           const userDoc = usernameSnapshot.docs[0];
           const userData = userDoc.data();
           const userId = userDoc.id;
           
+          console.log("✅ User found:", userData);
+          console.log("🆔 User ID:", userId);
+          
           // Get the user's links from the links subcollection
           const linksRef = collection(db, "users", userId, "links");
           const linksSnapshot = await getDocs(linksRef);
           const userLinks = linksSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          
+          console.log("🔗 Links found:", userLinks.length);
           
           const profileData = {
             username: username,
@@ -68,10 +99,11 @@ const PublicProfile = () => {
           setProfileData(profileData);
           setLocalLinks(userLinks || []);
         } else {
+          console.log("❌ No user found with username:", username);
           setError("Username not found");
         }
       } catch (err) {
-        console.error("Error fetching profile data:", err);
+        console.error("🚨 Error fetching profile data:", err);
         setError("Failed to load profile");
       } finally {
         setLoading(false);
@@ -93,6 +125,28 @@ const PublicProfile = () => {
       document.head.appendChild(link);
     }
   }, []);
+
+  const getModalIcon = (type) => {
+    switch (type) {
+      case 'success':
+        return <CheckCircle className="w-6 h-6 text-white" />;
+      case 'error':
+        return <AlertCircle className="w-6 h-6 text-white" />;
+      default:
+        return <CheckCircle className="w-6 h-6 text-white" />;
+    }
+  };
+
+  const getModalColors = (type) => {
+    switch (type) {
+      case 'success':
+        return { bg: 'bg-green-500', button: 'bg-green-500 hover:bg-green-600' };
+      case 'error':
+        return { bg: 'bg-red-500', button: 'bg-red-500 hover:bg-red-600' };
+      default:
+        return { bg: 'bg-blue-500', button: 'bg-blue-500 hover:bg-blue-600' };
+    }
+  };
 
   if (loading) {
     return (
@@ -143,7 +197,15 @@ const PublicProfile = () => {
     } else {
       // Fallback to copying to clipboard
       navigator.clipboard.writeText(window.location.href).then(() => {
-        alert("Link copied to clipboard! 📋");
+        setConfirmModal({
+          isOpen: true,
+          title: "Link Copied! 📋",
+          message: "Your profile link has been copied to clipboard successfully!",
+          onConfirm: () => setConfirmModal({ ...confirmModal, isOpen: false }),
+          confirmText: "Got it!",
+          cancelText: "",
+          type: "success"
+        });
       }).catch(() => {
         // Fallback for older browsers
         const textArea = document.createElement("textarea");
@@ -152,88 +214,133 @@ const PublicProfile = () => {
         textArea.select();
         document.execCommand("copy");
         document.body.removeChild(textArea);
-        alert("Link copied to clipboard! 📋");
+        setConfirmModal({
+          isOpen: true,
+          title: "Link Copied! 📋",
+          message: "Your profile link has been copied to clipboard successfully!",
+          onConfirm: () => setConfirmModal({ ...confirmModal, isOpen: false }),
+          confirmText: "Got it!",
+          cancelText: "",
+          type: "success"
+        });
       });
     }
   };
 
+  const colors = getModalColors(confirmModal.type);
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-start px-2 py-4 sm:px-6 sm:py-12" style={{ background: theme.backgroundColor, fontFamily: theme.fontFamily }}>
-      
-      {/* Share Button - Top Right Corner */}
-      <button
-        onClick={handleShare}
-        className="fixed top-2 right-2 sm:top-6 sm:right-6 p-2 sm:p-3 rounded-full shadow flex items-center justify-center z-50 transition hover:scale-110"
-        style={{
-          background: theme.primaryColor,
-          color: theme.backgroundColor,
-          border: `1px solid ${theme.secondaryColor}`,
-        }}
-      >
-        <Share className="w-4 h-4 sm:w-5 sm:h-5" />
-      </button>
-      
-      <div className="w-full sm:max-w-md bg-white/90 rounded-3xl shadow-2xl flex flex-col items-center relative mt-12 sm:mt-16" style={{ border: `2px solid ${theme.primaryColor}` }}>
+    <>
+      <div className="min-h-screen flex flex-col items-center justify-start px-2 py-4 sm:px-6 sm:py-12" style={{ background: theme.backgroundColor, fontFamily: theme.fontFamily }}>
         
-        <div className="absolute -top-12 sm:-top-16 left-1/2 -translate-x-1/2">
-          <div className="w-20 h-20 sm:w-32 sm:h-32 rounded-full border-4 shadow-lg flex items-center justify-center text-4xl sm:text-5xl font-bold overflow-hidden" style={{ background: theme.primaryColor, color: theme.backgroundColor, borderColor: theme.secondaryColor }}>
-            {profilePic ? <img src={profilePic} alt="Profile" className="w-full h-full object-cover" /> : username.charAt(0).toUpperCase()}
-          </div>
-        </div>
-
-        <div className="pt-20 sm:pt-24 pb-6 px-3 sm:px-6 w-full flex flex-col items-center gap-3 sm:gap-4">
-          <h1 className="text-lg sm:text-2xl font-bold text-center" style={{ color: theme.textColor, fontFamily: theme.fontFamily }}>{username}</h1>
-          <p className="text-center text-xs sm:text-sm mb-2" style={{ color: theme.textColor, opacity: 0.7 }}>
-            Join {username} at <a href="/" className="underline">Linkly</a>
-          </p>
-          <p className="text-center text-xs sm:text-base mb-2 px-1 sm:px-2" style={{ color: theme.textColor, opacity: 0.85, fontFamily: theme.fontFamily }}>{bio}</p>
-
-          <div className="flex flex-wrap gap-2 sm:gap-3 justify-center mb-3">
-            {quickLinks.map(link => {
-              const Icon = iconMap[link.iconType] || LinkIcon;
-              return (
-                <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer" className="p-2 sm:p-3 rounded-full shadow flex items-center justify-center transition hover:scale-105" style={{ background: theme.secondaryColor, color: theme.backgroundColor }}>
-                  <Icon className="w-4 h-4 sm:w-6 sm:w-6" />
-                </a>
-              );
-            })}
+        {/* Share Button - Top Right Corner */}
+        <button
+          onClick={handleShare}
+          className="fixed top-2 right-2 sm:top-6 sm:right-6 p-2 sm:p-3 rounded-full shadow flex items-center justify-center z-50 transition hover:scale-110"
+          style={{
+            background: theme.primaryColor,
+            color: theme.backgroundColor,
+            border: `1px solid ${theme.secondaryColor}`,
+          }}
+        >
+          <Share className="w-4 h-4 sm:w-5 sm:h-5" />
+        </button>
+        
+        <div className="w-full sm:max-w-md bg-white/90 rounded-3xl shadow-2xl flex flex-col items-center relative mt-12 sm:mt-16" style={{ border: `2px solid ${theme.primaryColor}` }}>
+          
+          <div className="absolute -top-12 sm:-top-16 left-1/2 -translate-x-1/2">
+            <div className="w-20 h-20 sm:w-32 sm:h-32 rounded-full border-4 shadow-lg flex items-center justify-center text-4xl sm:text-5xl font-bold overflow-hidden" style={{ background: theme.primaryColor, color: theme.backgroundColor, borderColor: theme.secondaryColor }}>
+              {profilePic ? <img src={profilePic} alt="Profile" className="w-full h-full object-cover" /> : username.charAt(0).toUpperCase()}
+            </div>
           </div>
 
-          <div className="w-full flex flex-col gap-2 sm:gap-3">
-            {categories.length === 0 ? (
-              <p className="text-center text-xs sm:text-sm" style={{ color: theme.textColor, opacity: 0.7 }}>
-                No links available.
-              </p>
-            ) : (
-              categories.map(category => (
-                <div key={category} className="mb-1 sm:mb-2">
-                  <h2 className="text-xs sm:text-base font-bold mb-1 uppercase tracking-wide" style={{ color: theme.primaryColor, opacity: 0.8 }}>{category}</h2>
-                  <div className="flex flex-col gap-1 sm:gap-2">
-                    {groupedLinks[category].map(link => {
-                      const Icon = iconMap[link.iconType] || LinkIcon;
-                      return (
-                        <button key={link.id} onClick={() => handleLinkClick(link.id, link.url)} className={`flex items-center gap-1 sm:gap-3 font-bold px-3 sm:px-6 py-2 sm:py-3 rounded-full shadow transition w-full text-left text-xs sm:text-base ${link.id === topLink?.id ? "ring-2 ring-yellow-400 bg-yellow-100" : ""}`} style={{ background: link.id === topLink?.id ? "#fef08a" : theme.primaryColor, color: link.id === topLink?.id ? "#92400e" : theme.backgroundColor, fontFamily: theme.fontFamily }}>
-                          <Icon className="w-3 h-3 sm:w-5 sm:h-5" />
-                          {link.title}
-                          {typeof link.clicks === "number" && <span className="ml-auto text-[10px] sm:text-sm opacity-70">{link.clicks} clicks</span>}
-                          {link.id === topLink?.id && <span className="ml-1 px-1 py-0.5 bg-yellow-400 text-yellow-900 rounded text-[10px] sm:text-xs font-semibold">Top</span>}
-                        </button>
-                      );
-                    })}
+          <div className="pt-20 sm:pt-24 pb-6 px-3 sm:px-6 w-full flex flex-col items-center gap-3 sm:gap-4">
+            <h1 className="text-lg sm:text-2xl font-bold text-center" style={{ color: theme.textColor, fontFamily: theme.fontFamily }}>{username}</h1>
+            <p className="text-center text-xs sm:text-sm mb-2" style={{ color: theme.textColor, opacity: 0.7 }}>
+              Join {username} at <a href="/" className="underline">Linkly</a>
+            </p>
+            <p className="text-center text-xs sm:text-base mb-2 px-1 sm:px-2" style={{ color: theme.textColor, opacity: 0.85, fontFamily: theme.fontFamily }}>{bio}</p>
+
+            <div className="flex flex-wrap gap-2 sm:gap-3 justify-center mb-3">
+              {quickLinks.map(link => {
+                const Icon = iconMap[link.iconType] || LinkIcon;
+                return (
+                  <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer" className="p-2 sm:p-3 rounded-full shadow flex items-center justify-center transition hover:scale-105" style={{ background: theme.secondaryColor, color: theme.backgroundColor }}>
+                    <Icon className="w-4 h-4 sm:w-6 sm:w-6" />
+                  </a>
+                );
+              })}
+            </div>
+
+            <div className="w-full flex flex-col gap-2 sm:gap-3">
+              {categories.length === 0 ? (
+                <p className="text-center text-xs sm:text-sm" style={{ color: theme.textColor, opacity: 0.7 }}>
+                  No links available.
+                </p>
+              ) : (
+                categories.map(category => (
+                  <div key={category} className="mb-1 sm:mb-2">
+                    <h2 className="text-xs sm:text-base font-bold mb-1 uppercase tracking-wide" style={{ color: theme.primaryColor, opacity: 0.8 }}>{category}</h2>
+                    <div className="flex flex-col gap-1 sm:gap-2">
+                      {groupedLinks[category].map(link => {
+                        const Icon = iconMap[link.iconType] || LinkIcon;
+                        return (
+                          <button key={link.id} onClick={() => handleLinkClick(link.id, link.url)} className={`flex items-center gap-1 sm:gap-3 font-bold px-3 sm:px-6 py-2 sm:py-3 rounded-full shadow transition w-full text-left text-xs sm:text-base ${link.id === topLink?.id ? "ring-2 ring-yellow-400 bg-yellow-100" : ""}`} style={{ background: link.id === topLink?.id ? "#fef08a" : theme.primaryColor, color: link.id === topLink?.id ? "#92400e" : theme.backgroundColor, fontFamily: theme.fontFamily }}>
+                            <Icon className="w-3 h-3 sm:w-5 sm:h-5" />
+                            {link.title}
+                            {typeof link.clicks === "number" && <span className="ml-auto text-[10px] sm:text-sm opacity-70">{link.clicks} clicks</span>}
+                            {link.id === topLink?.id && <span className="ml-1 px-1 py-0.5 bg-yellow-400 text-yellow-900 rounded text-[10px] sm:text-xs font-semibold">Top</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))
-            )}
+                ))
+              )}
+            </div>
           </div>
         </div>
+
+        <div className="fixed bottom-2 left-2 sm:bottom-6 sm:left-6 z-50 flex flex-col items-center">
+          <QRCodeCanvas id="profile-qr" value={window.location.href} size={50} bgColor="#fff" fgColor="#000" level="H" includeMargin={true} style={{ borderRadius: "12px", boxShadow: "0 2px 8px 0 rgba(0,0,0,0.10)", background: "#fff" }} />
+          <span className="mt-1 text-[9px] sm:text-sm font-semibold" style={{ color: "#111", background: "rgba(255,255,255,0.7)", borderRadius: "6px", padding: "1px 4px" }}>Scan Me</span>
+        </div>
+
       </div>
 
-      <div className="fixed bottom-2 left-2 sm:bottom-6 sm:left-6 z-50 flex flex-col items-center">
-        <QRCodeCanvas id="profile-qr" value={window.location.href} size={50} bgColor="#fff" fgColor="#000" level="H" includeMargin={true} style={{ borderRadius: "12px", boxShadow: "0 2px 8px 0 rgba(0,0,0,0.10)", background: "#fff" }} />
-        <span className="mt-1 text-[9px] sm:text-sm font-semibold" style={{ color: "#111", background: "rgba(255,255,255,0.7)", borderRadius: "6px", padding: "1px 4px" }}>Scan Me</span>
-      </div>
-
-    </div>
+      {/* Confirmation Modal */}
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+          <div className="bg-neutral-900 p-6 rounded-xl w-11/12 max-w-md relative">
+            <div className="flex items-center gap-3 mb-4">
+              <div className={`w-10 h-10 rounded-full ${colors.bg} flex items-center justify-center`}>
+                {getModalIcon(confirmModal.type)}
+              </div>
+              <h2 className="text-2xl font-bold">{confirmModal.title}</h2>
+            </div>
+            
+            <p className="text-neutral-300 mb-6 whitespace-pre-line">{confirmModal.message}</p>
+            
+            <div className="flex gap-3">
+              {confirmModal.cancelText && (
+                <button
+                  onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+                  className="flex-1 py-3 px-4 rounded-xl bg-neutral-700 text-white font-semibold hover:bg-neutral-600 transition"
+                >
+                  {confirmModal.cancelText}
+                </button>
+              )}
+              <button
+                onClick={confirmModal.onConfirm}
+                className={`flex-1 py-3 px-4 rounded-xl text-white font-semibold transition ${colors.button}`}
+              >
+                {confirmModal.confirmText}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
