@@ -22,9 +22,7 @@ const HeroSection = () => {
        
           
         
-        <a href="#" className="py-3 px-4 mx-3 rounded-md border">
-          Documentation
-        </a>
+       
       </div>
       <div className="flex mt-10 justify-center">
         <video
