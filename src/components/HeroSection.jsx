@@ -20,9 +20,6 @@ const HeroSection = () => {
          Start for free
         </Link>
        
-          
-        
-       
       </div>
       <div className="flex mt-10 justify-center">
         <video
