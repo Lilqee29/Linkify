@@ -19,6 +19,26 @@ const Register = () => {
 
 
 
+    const getErrorMessage = (error) => {
+        // Map Firebase error codes to user-friendly messages
+        const errorCode = error.code;
+        
+        switch(errorCode) {
+            case 'auth/email-already-in-use':
+                return '📧 This email is already registered. Try logging in instead!';
+            case 'auth/weak-password':
+                return '🔒 Password is too weak. Please use at least 6 characters.';
+            case 'auth/invalid-email':
+                return '📧 Please enter a valid email address.';
+            case 'auth/operation-not-allowed':
+                return '⚠️ Email/password sign-up is currently disabled. Please contact support.';
+            case 'auth/network-request-failed':
+                return '📡 Network error. Please check your internet connection.';
+            default:
+                return '❌ Something went wrong. Please try again or contact support.';
+        }
+    };
+
     const onSignUp = async (e) => {
         e.preventDefault();
         if (isSigningUp) return;
@@ -49,7 +69,7 @@ const Register = () => {
             setTimeout(() => navigate('/login'), 3000);
 
         } catch (error) {
-            setErrorMessage(error.message);
+            setErrorMessage(getErrorMessage(error));
         } finally {
             setIsSigningUp(false);
         }

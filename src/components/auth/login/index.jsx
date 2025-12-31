@@ -29,29 +29,32 @@ const Login = () => {
         
         switch (err.code) {
           case 'auth/user-not-found':
-            userFriendlyMessage = "No account found with this email address.";
+            userFriendlyMessage = "❌ No account found with this email. Try signing up!";
             break;
           case 'auth/wrong-password':
-            userFriendlyMessage = "Incorrect password. Please try again.";
+            userFriendlyMessage = "🔒 Incorrect password. Please try again.";
             break;
           case 'auth/invalid-email':
-            userFriendlyMessage = "Please enter a valid email address.";
+            userFriendlyMessage = "📧 Please enter a valid email address.";
             break;
           case 'auth/too-many-requests':
-            userFriendlyMessage = "Too many failed attempts. Please try again later.";
+            userFriendlyMessage = "⏰ Too many failed attempts. Please try again later.";
             break;
           case 'auth/user-disabled':
-            userFriendlyMessage = "This account has been disabled. Please contact support.";
+            userFriendlyMessage = "🚫 This account has been disabled. Contact support.";
             break;
           case 'auth/network-request-failed':
-            userFriendlyMessage = "Network error. Please check your internet connection.";
+            userFriendlyMessage = "📡 Network error. Check your internet connection.";
+            break;
+          case 'auth/invalid-credential':
+            userFriendlyMessage = "🔐 Invalid email or password. Please try again.";
             break;
           default:
             // Check if it's our custom verification error
             if (err.message.includes("verify your email")) {
-              userFriendlyMessage = err.message;
+              userFriendlyMessage = "📧 " + err.message;
             } else {
-              userFriendlyMessage = err.message;
+              userFriendlyMessage = "❌ " + err.message;
             }
         }
         
@@ -69,7 +72,17 @@ const Login = () => {
       try {
         await doSignInWithGoogle();
       } catch (err) {
-        setErrorMessage(err.message);
+        let errorMsg = "❌ Google sign-in failed. Please try again.";
+        
+        if (err.code === 'auth/popup-closed-by-user') {
+          errorMsg = "⚠️ Sign-in cancelled. Please try again.";
+        } else if (err.code === 'auth/network-request-failed') {
+          errorMsg = "📡 Network error. Check your internet connection.";
+        } else if (err.code === 'auth/popup-blocked') {
+          errorMsg = "🚫 Popup blocked. Please enable popups for this site.";
+        }
+        
+        setErrorMessage(errorMsg);
         setIsSigningIn(false);
       }
     }

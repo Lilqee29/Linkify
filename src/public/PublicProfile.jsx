@@ -68,43 +68,22 @@ const PublicProfile = () => {
     const fetchProfileData = async () => {
       try {
         setLoading(true);
-        console.log("🔍 Searching for username:", username);
         
         // Query all users to find the one with matching username
         const usersRef = collection(db, "users");
-        console.log("📚 Database reference created");
-        
-        // Try to get all users first to see what's in the database
-        try {
-          const allUsersSnapshot = await getDocs(usersRef);
-          console.log("📊 Total users in database:", allUsersSnapshot.size);
-          allUsersSnapshot.forEach(doc => {
-            const userData = doc.data();
-            console.log("👤 User:", userData.username, "ID:", doc.id);
-          });
-        } catch (allUsersErr) {
-          console.log("⚠️ Could not fetch all users:", allUsersErr);
-        }
         
         const usernameQuery = query(usersRef, where("username", "==", username));
         const usernameSnapshot = await getDocs(usernameQuery);
-        
-        console.log("📊 Query result:", usernameSnapshot.size, "documents found");
         
         if (!usernameSnapshot.empty) {
           const userDoc = usernameSnapshot.docs[0];
           const userData = userDoc.data();
           const userId = userDoc.id;
           
-          console.log("✅ User found:", userData);
-          console.log("🆔 User ID:", userId);
-          
           // Get the user's links from the links subcollection
           const linksRef = collection(db, "users", userId, "links");
           const linksSnapshot = await getDocs(linksRef);
           const userLinks = linksSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          
-          console.log("🔗 Links found:", userLinks.length);
           
           const profileData = {
             id: userId, // CRITICAL: User ID for sending messages
@@ -124,7 +103,6 @@ const PublicProfile = () => {
           setProfileData(profileData);
           setLocalLinks(userLinks || []);
         } else {
-          console.log("❌ No user found with username:", username);
           setError("Username not found");
         }
       } catch (err) {

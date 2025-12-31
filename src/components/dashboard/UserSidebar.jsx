@@ -156,7 +156,7 @@ const deleteUserAccount = async () => {
 
   return (
     <div
-      className={`fixed top-0 right-0 h-full bg-black shadow-xl transform transition-transform duration-300 z-50
+      className={`fixed top-0 right-0 min-h-screen bg-black shadow-xl transform transition-transform duration-300 z-50
         ${isOpen ? "translate-x-0" : "translate-x-full"} w-full sm:w-80`}
     >
       {/* Header */}
@@ -228,33 +228,31 @@ const deleteUserAccount = async () => {
 
       {/* Modal for Changing Username */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-black p-6 rounded-2xl w-80 border border-orange-500">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
+          <div className="bg-black p-6 rounded-2xl w-full max-w-sm border border-orange-500 min-h-[200px]">
             <h2 className="text-xl font-bold mb-4 text-white">
               Change Username
             </h2>
-            <div className="flex flex-col gap-4">
-              <input
-                type="text"
-                value={newUsername}
-                onChange={(e) => setNewUsername(e.target.value)}
-                placeholder="Enter new username"
-                className="p-2 border border-orange-500 rounded bg-black text-white placeholder-white"
-              />
-              <div className="flex justify-end gap-2 mt-2">
-                <button
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded bg-gray-700 hover:bg-gray-800 text-white"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSaveUsername}
-                  className="px-4 py-2 rounded bg-orange-500 hover:bg-orange-600 text-white"
-                >
-                  Save
-                </button>
-              </div>
+            <input
+              type="text"
+              value={newUsername}
+              onChange={(e) => setNewUsername(e.target.value)}
+              placeholder="Enter new username"
+              className="w-full p-3 border border-orange-500 rounded bg-black text-white placeholder-gray-400 mb-4"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="px-4 py-2 rounded bg-gray-700 hover:bg-gray-800 text-white"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveUsername}
+                className="px-4 py-2 rounded bg-orange-500 hover:bg-orange-600 text-white"
+              >
+                Save
+              </button>
             </div>
           </div>
         </div>
@@ -262,33 +260,31 @@ const deleteUserAccount = async () => {
 
       {/* Modal for Changing Password */}
       {isPasswordModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-black p-6 rounded-2xl w-80 border border-blue-500">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
+          <div className="bg-black p-6 rounded-2xl w-full max-w-sm border border-blue-500 min-h-[200px]">
             <h2 className="text-xl font-bold mb-4 text-white">
               Change Password
             </h2>
-            <div className="flex flex-col gap-4">
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Enter new password"
-                className="p-2 border border-blue-500 rounded bg-black text-white placeholder-white"
-              />
-              <div className="flex justify-end gap-2 mt-2">
-                <button
-                  onClick={() => setIsPasswordModalOpen(false)}
-                  className="px-4 py-2 rounded bg-gray-700 hover:bg-gray-800 text-white"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handlePasswordChange}
-                  className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  Save
-                </button>
-              </div>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Enter new password"
+              className="w-full p-3 border border-blue-500 rounded bg-black text-white placeholder-gray-400 mb-4"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setIsPasswordModalOpen(false)}
+                className="px-4 py-2 rounded bg-gray-700 hover:bg-gray-800 text-white"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePasswordChange}
+                className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                Save
+              </button>
             </div>
           </div>
         </div>
