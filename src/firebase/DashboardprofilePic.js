@@ -21,22 +21,35 @@ export const useDashboardProfilePic = () => {
       );
 
       const data = await res.json();
+      
+      if (!data.success || !data.data || !data.data.url) {
+        throw new Error(data.error?.message || "ImgBB upload failed");
+      }
+      
       const url = data.data.url; // the direct link
+      console.log("Upload success, new URL:", url);
 
       // Update state
       setProfilePic(url);
 
       // Update Firebase Auth
-      await updateProfile(auth.currentUser, { photoURL: url });
+      if (auth.currentUser) {
+         try {
+           await updateProfile(auth.currentUser, { photoURL: url });
+         } catch (authErr) {
+           console.warn("Could not update Auth profile (non-fatal):", authErr);
+         }
+      }
 
       // Update Firestore database
       const userRef = doc(db, "users", auth.currentUser.uid);
       await setDoc(userRef, { photoURL: url }, { merge: true });
 
       alert("Profile picture updated ✅");
+      setProfileFile(null); // Reset file input
     } catch (err) {
       console.error("Error updating profile pic:", err);
-      alert("Failed to update profile picture.");
+      alert(`Failed to update profile picture: ${err.message}`);
     }
   };
 

@@ -1,10 +1,13 @@
 // src/public/PublicProfile.jsx
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { FaDiscord, FaPinterest, FaReddit, FaSnapchat, FaTelegram, FaTiktok, FaWhatsapp } from "react-icons/fa";
-import { Instagram, Youtube, Twitter, Facebook, Github, Link as LinkIcon, Share, CheckCircle, AlertCircle } from "lucide-react";
+import { Instagram, Youtube, Twitter, Facebook, Github, Link as LinkIcon, Share, CheckCircle, AlertCircle, MessageSquare, Send } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import { collection, getDocs, query, where } from "firebase/firestore";
+import { sendMessageToUser } from "../firebase/DashboardMessages";
+import { trackLinkClick } from "../firebase/trackClick";
 import { db } from "../firebase/firebase";
 
 // Map icon type to components
@@ -39,6 +42,27 @@ const PublicProfile = () => {
     cancelText: "",
     type: "info"
   });
+
+  const [messageText, setMessageText] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [messageSent, setMessageSent] = useState(false);
+
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!messageText.trim() || !profileData?.id) return;
+
+    setSendingMessage(true);
+    const success = await sendMessageToUser(profileData.id, messageText);
+    
+    if (success) {
+      setMessageText("");
+      setMessageSent(true);
+      setTimeout(() => setMessageSent(false), 3000);
+    } else {
+      alert("Failed to send message. Please try again.");
+    }
+    setSendingMessage(false);
+  };
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -83,15 +107,16 @@ const PublicProfile = () => {
           console.log("🔗 Links found:", userLinks.length);
           
           const profileData = {
+            id: userId, // CRITICAL: User ID for sending messages
             username: username,
             links: userLinks || [],
             bio: userData.bio || "Welcome to my links page 🚀",
             profilePic: userData.photoURL || null,
             theme: userData.customTheme || {
-              primaryColor: "#f59e0b",
-              secondaryColor: "#ef4444",
-              backgroundColor: "#7c2d12",
-              textColor: "#111827",
+              primaryColor: "#6366f1", // Indigo
+              secondaryColor: "#818cf8",
+              backgroundColor: "#000000",
+              textColor: "#ffffff",
               fontFamily: "'Inter', sans-serif"
             }
           };
@@ -115,16 +140,7 @@ const PublicProfile = () => {
     }
   }, [username]);
 
-  // Add Google Fonts
-  useEffect(() => {
-    if (!document.getElementById('google-fonts-public')) {
-      const link = document.createElement('link');
-      link.id = 'google-fonts-public';
-      link.rel = 'stylesheet';
-      link.href = 'https://fonts.googleapis.com/css2?family=Comic+Neue&family=Bubblegum+Sans&family=Fredoka+One&family=Bangers&family=Architects+Daughter&display=swap';
-      document.head.appendChild(link);
-    }
-  }, []);
+  // Fonts are now handled globally in index.css
 
   const getModalIcon = (type) => {
     switch (type) {
@@ -180,10 +196,18 @@ const PublicProfile = () => {
   }, {});
   const topLink = localLinks.reduce((max, link) => (link.clicks || 0) > (max?.clicks || 0) ? link : max, localLinks[0]);
 
-  const handleLinkClick = (id, url) => {
+  const handleLinkClick = async (id, url) => {
+    // Update local state immediately for instant UI feedback
     setLocalLinks(prev =>
       prev.map(link => link.id === id ? { ...link, clicks: (link.clicks || 0) + 1 } : link)
     );
+    
+    // Track in Firestore (async, doesn't block navigation)
+    if (profileData?.id) {
+      trackLinkClick(profileData.id, id);
+    }
+    
+    // Open the link
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
@@ -231,81 +255,139 @@ const PublicProfile = () => {
 
   return (
     <>
-      <div className="min-h-screen flex flex-col items-center justify-start px-2 py-4 sm:px-6 sm:py-12" style={{ background: theme.backgroundColor, fontFamily: theme.fontFamily }}>
+      <Helmet>
+        <title>{username ? `${username} | Linkify` : "Linkify"}</title>
+        <meta name="description" content={bio || `Check out ${username}'s links!`} />
         
-        {/* Share Button - Top Right Corner */}
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content={`${username} | Linkify`} />
+        <meta property="og:description" content={bio || `Check out ${username}'s links!`} />
+        {profilePic && <meta property="og:image" content={profilePic} />}
+        
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={`${username} | Linkify`} />
+        <meta name="twitter:description" content={bio || `Check out ${username}'s links!`} />
+        {profilePic && <meta name="twitter:image" content={profilePic} />}
+      </Helmet>
+
+      <div className="min-h-screen flex flex-col items-center pt-16 px-4 pb-20 transition-colors duration-500 overflow-x-hidden" style={{ background: theme.backgroundColor, fontFamily: theme.fontFamily, color: theme.textColor }}>
+        
+        {/* Share Button (Keep this, as it's useful on the live page) */}
         <button
           onClick={handleShare}
-          className="fixed top-2 right-2 sm:top-6 sm:right-6 p-2 sm:p-3 rounded-full shadow flex items-center justify-center z-50 transition hover:scale-110"
+          className="fixed top-6 right-6 p-3 rounded-full shadow-lg flex items-center justify-center z-50 transition-all hover:scale-110 active:scale-95 group backdrop-blur-sm"
           style={{
-            background: theme.primaryColor,
-            color: theme.backgroundColor,
-            border: `1px solid ${theme.secondaryColor}`,
+            background: "rgba(255,255,255,0.1)",
+            border: `1px solid ${theme.textColor}20`,
+            color: theme.textColor
           }}
         >
-          <Share className="w-4 h-4 sm:w-5 sm:h-5" />
+          <Share className="w-5 h-5 group-hover:rotate-12 transition-transform" />
         </button>
-        
-        <div className="w-full sm:max-w-md bg-white/90 rounded-3xl shadow-2xl flex flex-col items-center relative mt-12 sm:mt-16" style={{ border: `2px solid ${theme.primaryColor}` }}>
-          
-          <div className="absolute -top-12 sm:-top-16 left-1/2 -translate-x-1/2">
-            <div className="w-20 h-20 sm:w-32 sm:h-32 rounded-full border-4 shadow-lg flex items-center justify-center text-4xl sm:text-5xl font-bold overflow-hidden" style={{ background: theme.primaryColor, color: theme.backgroundColor, borderColor: theme.secondaryColor }}>
-              {profilePic ? <img src={profilePic} alt="Profile" className="w-full h-full object-cover" /> : username.charAt(0).toUpperCase()}
-            </div>
-          </div>
 
-          <div className="pt-20 sm:pt-24 pb-6 px-3 sm:px-6 w-full flex flex-col items-center gap-3 sm:gap-4">
-            <h1 className="text-lg sm:text-2xl font-bold text-center" style={{ color: theme.textColor, fontFamily: theme.fontFamily }}>{username}</h1>
-            <p className="text-center text-xs sm:text-sm mb-2" style={{ color: theme.textColor, opacity: 0.7 }}>
-              Join {username} at <a href="/" className="underline">Linkly</a>
-            </p>
-            <p className="text-center text-xs sm:text-base mb-2 px-1 sm:px-2" style={{ color: theme.textColor, opacity: 0.85, fontFamily: theme.fontFamily }}>{bio}</p>
-
-            <div className="flex flex-wrap gap-2 sm:gap-3 justify-center mb-3">
-              {quickLinks.map(link => {
-                const Icon = iconMap[link.iconType] || LinkIcon;
-                return (
-                  <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer" className="p-2 sm:p-3 rounded-full shadow flex items-center justify-center transition hover:scale-105" style={{ background: theme.secondaryColor, color: theme.backgroundColor }}>
-                    <Icon className="w-4 h-4 sm:w-6 sm:w-6" />
-                  </a>
-                );
-              })}
+         {/* Main Content (Matching Dashboard Preview Structure) */}
+         <div className="w-full max-w-md mx-auto flex flex-col items-center">
+            
+            {/* Profile Pic */}
+            <div className="relative mb-6 z-10">
+              <div className="w-28 h-28 rounded-full border-4 shadow-xl flex items-center justify-center text-5xl font-bold overflow-hidden bg-neutral-100"
+                  style={{
+                    borderColor: theme.primaryColor,
+                    color: theme.primaryColor
+                  }}
+              >
+                {profilePic ? (
+                  <img src={profilePic} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <div>{username.charAt(0).toUpperCase()}</div>
+                )}
+              </div>
             </div>
 
-            <div className="w-full flex flex-col gap-2 sm:gap-3">
-              {categories.length === 0 ? (
-                <p className="text-center text-xs sm:text-sm" style={{ color: theme.textColor, opacity: 0.7 }}>
-                  No links available.
-                </p>
-              ) : (
-                categories.map(category => (
-                  <div key={category} className="mb-1 sm:mb-2">
-                    <h2 className="text-xs sm:text-base font-bold mb-1 uppercase tracking-wide" style={{ color: theme.primaryColor, opacity: 0.8 }}>{category}</h2>
-                    <div className="flex flex-col gap-1 sm:gap-2">
-                      {groupedLinks[category].map(link => {
-                        const Icon = iconMap[link.iconType] || LinkIcon;
-                        return (
-                          <button key={link.id} onClick={() => handleLinkClick(link.id, link.url)} className={`flex items-center gap-1 sm:gap-3 font-bold px-3 sm:px-6 py-2 sm:py-3 rounded-full shadow transition w-full text-left text-xs sm:text-base ${link.id === topLink?.id ? "ring-2 ring-yellow-400 bg-yellow-100" : ""}`} style={{ background: link.id === topLink?.id ? "#fef08a" : theme.primaryColor, color: link.id === topLink?.id ? "#92400e" : theme.backgroundColor, fontFamily: theme.fontFamily }}>
-                            <Icon className="w-3 h-3 sm:w-5 sm:h-5" />
-                            {link.title}
-                            {typeof link.clicks === "number" && <span className="ml-auto text-[10px] sm:text-sm opacity-70">{link.clicks} clicks</span>}
-                            {link.id === topLink?.id && <span className="ml-1 px-1 py-0.5 bg-yellow-400 text-yellow-900 rounded text-[10px] sm:text-xs font-semibold">Top</span>}
-                          </button>
-                        );
-                      })}
-                    </div>
+            {/* Username & Bio */}
+            <div className="text-center w-full z-10 mb-8 space-y-2">
+              <h1 className="text-2xl font-bold tracking-tight">@{username}</h1>
+              <p className="text-base opacity-80 leading-relaxed max-w-sm mx-auto px-4">
+                {bio}
+              </p>
+            </div>
+
+             {/* AMA / Message Box */}
+             <div className="w-full max-w-sm mb-8">
+                <form onSubmit={handleSendMessage} className="relative">
+                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none opacity-50">
+                    <MessageSquare className="w-4 h-4" style={{ color: theme.textColor }} />
                   </div>
-                ))
+                  <input
+                    type="text"
+                    value={messageText}
+                    onChange={(e) => setMessageText(e.target.value)}
+                    placeholder={messageSent ? "Message sent! Send another?" : "Ask me anything..."}
+                    className="w-full pl-10 pr-12 py-3 rounded-2xl border-none outline-none shadow-lg focus:shadow-xl transition-shadow bg-white/10 backdrop-blur-md placeholder:text-current/50"
+                    style={{ 
+                      color: theme.textColor,
+                      background: theme.backgroundColor === '#ffffff' ? '#f3f4f6' : 'rgba(255,255,255,0.1)'
+                    }}
+                  />
+                  <button
+                    type="submit"
+                    disabled={!messageText.trim() || sendingMessage}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-transform active:scale-95 hover:bg-white/10"
+                    style={{ color: theme.primaryColor }}
+                  >
+                    {sendingMessage ? <span className="animate-spin block w-4 h-4 border-2 border-current border-t-transparent rounded-full"/> : <Send className="w-4 h-4" />}
+                  </button>
+                </form>
+             </div>
+
+            {/* Links List */}
+            <div className="w-full flex flex-col gap-4 z-10">
+              {categories.length === 0 ? (
+                  <div className="text-center opacity-50 py-10">No public links yet.</div>
+              ) : (
+                // Flattening links for the simple preview style, or respecting categories if preferred.
+                // Dashboard preview showed a FLAT list in the code I viewed (lines 572+).
+                // But PublicProfile used categories. 
+                // To match PREVIEW exactly, we should just show the list or simplistic category headers.
+                // Let's stick to the Dashboard Preview's flat-ish look but maybe keep categories if they add value, 
+                // OR simpler: just render all links if the user wants "EXACT" match.
+                // However, the dashboard preview loop was `links.map`, implying flat list.
+                // I will render a flat list of links to match the preview exactly.
+                
+                localLinks.map((link) => {
+                   const Icon = iconMap[link.iconType] || LinkIcon;
+                   return (
+                     <div
+                      key={link.id}
+                      onClick={() => handleLinkClick(link.id, link.url)}
+                      className="relative flex items-center justify-between px-5 py-4 rounded-xl shadow-sm transition-transform w-full text-left font-medium cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                      style={{
+                        backgroundColor: theme.primaryColor,
+                        color: theme.backgroundColor === "#ffffff" ? "#000000" : "#ffffff", // Dynamic contrast 
+                        opacity: 0.95
+                      }}
+                    >
+                      <span className="flex items-center gap-4 min-w-0">
+                        <Icon className="w-5 h-5 shrink-0" />
+                        <span className="truncate">{link.title}</span>
+                      </span>
+                    </div>
+                   );
+                 })
               )}
             </div>
-          </div>
-        </div>
 
-        <div className="fixed bottom-2 left-2 sm:bottom-6 sm:left-6 z-50 flex flex-col items-center">
-          <QRCodeCanvas id="profile-qr" value={window.location.href} size={50} bgColor="#fff" fgColor="#000" level="H" includeMargin={true} style={{ borderRadius: "12px", boxShadow: "0 2px 8px 0 rgba(0,0,0,0.10)", background: "#fff" }} />
-          <span className="mt-1 text-[9px] sm:text-sm font-semibold" style={{ color: "#111", background: "rgba(255,255,255,0.7)", borderRadius: "6px", padding: "1px 4px" }}>Scan Me</span>
-        </div>
+            {/* Footer */}
+            <div className="mt-16 flex flex-col items-center gap-2 opacity-50 transition-opacity hover:opacity-100">
+               <QRCodeCanvas id="profile-qr" value={window.location.href} size={40} bgColor="transparent" fgColor={theme.textColor} level="L" />
+               <p className="text-[10px] font-bold tracking-[0.2em] mt-2 uppercase">
+                  Powered by Linkify
+               </p>
+            </div>
 
+         </div>
       </div>
 
       {/* Confirmation Modal */}

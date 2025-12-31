@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/authContext";
-import { PlusCircle, Eye, Edit2, Trash2, X, User, Image as ImageIcon, Palette, Pi, Share } from "lucide-react";
+import { PlusCircle, Eye, Edit2, Trash2, X, User, Image as ImageIcon, Palette, Pi, Share, MessageSquare, Trash, BarChart3 } from "lucide-react";
 import DashboardNavbar from "./DashboardNavbar";
 import { useNavigate } from "react-router-dom";
 import { useDashboardLinks } from "../../firebase/Dashboardlink"; // adjust path
@@ -9,6 +9,7 @@ import { useDashboardProfilePic } from "../../firebase/DashboardprofilePic"; // 
 import { useDashboardTheme } from "../../firebase/useDashboardtheme"; // adjust path
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
+import { useDashboardMessages } from "../../firebase/DashboardMessages";
 
 
 
@@ -35,9 +36,13 @@ const iconMap = {
 
 const Dashboard = () => {
   // eslint-disable-next-line no-unused-vars
-  const { currentUser, updateProfile } = useAuth();
+  const { currentUser, updateProfile, loading } = useAuth(); // Assume useAuth returns loading
   const navigate = useNavigate();
    const [username, setUsername] = useState("User");
+
+   if (loading) {
+     return <div className="min-h-screen bg-neutral-900 flex items-center justify-center text-white">Loading...</div>;
+   }
 
   useEffect(() => {
     if (!currentUser) return;
@@ -90,7 +95,13 @@ const Dashboard = () => {
   const [bioModalOpen, setBioModalOpen] = useState(false);
   const [profilePicModalOpen, setProfilePicModalOpen] = useState(false);
 
-  const { bio, setBio, handleSaveBio } = useDashboardProfile();
+  const { bio, handleSaveBio, loading: bioLoading } = useDashboardProfile(); // Removed setBio from here to avoid confusion
+  const [tempBio, setTempBio] = useState(bio); // Local state for editing
+
+  // Update tempBio when bio loads from db
+  useEffect(() => { 
+    setTempBio(bio); 
+  }, [bio]);
 
   const { profilePic,profileFile, setProfileFile, handleSaveProfilePic } = useDashboardProfilePic();
 
@@ -117,12 +128,30 @@ const saveProfilePic = async () => {
   // const [themeModalOpen, setThemeModalOpen] = useState(false);
   // const [currentTheme, setCurrentTheme] = useState(currentUser?.theme || "default");
   // const [customTheme, setCustomTheme] = useState({
-  //   primaryColor: "#6366F1",   // Indigo-500 (modern Linktree-like accent)
-  //   secondaryColor: "#22D3EE", // Cyan-400 (fresh + lively highlight)
-  //   backgroundColor: "#0F172A", // Slate-900 (deep navy, softer than pure black)
-  //   textColor: "#F8FAFC",      // Slate-50 (off-white, easy on the eyes)
+  //   primaryColor: "#6366F1", 
+  //   secondaryColor: "#22D3EE",
+  //   backgroundColor: "#0F172A",
+  //   textColor: "#F8FAFC",
   //   fontFamily: "'Inter', sans-serif"
   // });
+  
+  // Guard against undefined customTheme
+  const safeCustomTheme = customTheme || {
+        primaryColor: "#6366f1", // Indigo 500
+        secondaryColor: "#818cf8", // Indigo 400
+        backgroundColor: "#000000", // Pure Black
+        textColor: "#ffffff",
+        fontFamily: "'Inter', sans-serif"
+  };
+
+  const [messagesModalOpen, setMessagesModalOpen] = useState(false);
+  const { messages, loading: messagesLoading, handleDeleteMessage } = useDashboardMessages();
+  const [analyticsModalOpen, setAnalyticsModalOpen] = useState(false);
+
+  // Analytics calculations
+  const totalClicks = links.reduce((sum, link) => sum + (link.clicks || 0), 0);
+  const topLinks = [...links].sort((a, b) => (b.clicks || 0) - (a.clicks || 0)).slice(0, 3);
+  const maxClicks = Math.max(...links.map(l => l.clicks || 0), 1);
   // // Example of improved default and preset themes for clarity and text emphasis:
 // Helper function to calculate best text color
   function getContrastColor(bgColor) {
@@ -225,7 +254,7 @@ const saveProfilePic = async () => {
 
   const handlePreview = () => {
     // If using a custom theme, pass customTheme, else pass the selected predefined theme
-    const themeData = currentTheme === 'custom' ? customTheme : predefinedThemes[currentTheme];
+    const themeData = currentTheme === 'custom' ? safeCustomTheme : predefinedThemes[currentTheme];
     navigate(`/profile/${username}`, { 
       state: { 
         links, 
@@ -375,103 +404,326 @@ useEffect(() => {
 
   // ------------------- JSX -------------------
   return (
-    <div className="min-h-screen bg-neutral-900 text-white font-sans">
-      <DashboardNavbar onEditProfilePic={() => setProfilePicModalOpen(true)} />
+    <div className="min-h-screen bg-[#0f0f11] text-white font-sans selection:bg-indigo-500 selection:text-white">
+      {/* Navbar with subtle translucency */}
+      <div className="sticky top-0 z-50 backdrop-blur-xl bg-black/50 border-b border-white/5">
+         <DashboardNavbar onEditProfilePic={() => setProfilePicModalOpen(true)} />
+      </div>
 
-      <div className="max-w-3xl mx-auto p-6">
-        <h1 className="text-4xl font-bold text-center mb-10 text-orange-500">
-          Welcome {username}, manage your profile 🚀
-        </h1>
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-10 flex flex-col lg:flex-row gap-8 lg:gap-12">
+        
+        {/* Left Column: Editor Controls */}
+        <div className="flex-1 space-y-8">
+           
+           {/* Header Area */}
+           <div className="space-y-2">
+              <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+                Dashboard
+              </h1>
+              <p className="text-neutral-400">Manage your links and appearance.</p>
+           </div>
 
-        {/* Profile Preview */}
-        <div className="flex flex-col items-center mb-8">
-          <img
-            src={profilePic || "https://via.placeholder.com/150"}
-            alt="Profile"
-            className="w-32 h-32 rounded-full object-cover mb-3 border-4 border-orange-500"
-          />
-          <p>{bio || "No bio yet."}</p>
+           {/* Quick Actions Grid */}
+           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <button
+                onClick={handleAddLink}
+                className="col-span-2 py-4 px-6 rounded-2xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] transition-all font-bold shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 group"
+              >
+                <PlusCircle className="w-5 h-5 group-hover:rotate-90 transition-transform" /> Add Link
+              </button>
+              
+              <button
+                onClick={() => setThemeModalOpen(true)}
+                className="py-4 px-6 rounded-2xl bg-neutral-800 hover:bg-neutral-700 active:scale-[0.98] transition-all font-semibold flex flex-col items-center justify-center gap-1 hover:text-indigo-400"
+              >
+                 <Palette className="w-5 h-5" /> <span className="text-xs">Appearance</span>
+              </button>
+
+              <button
+                onClick={handleShare}
+                className="py-4 px-6 rounded-2xl bg-neutral-800 hover:bg-neutral-700 active:scale-[0.98] transition-all font-semibold flex flex-col items-center justify-center gap-1 hover:text-green-400"
+              >
+                 <Share className="w-5 h-5" /> <span className="text-xs">Share</span>
+              </button>
+
+              <button
+                 onClick={() => setMessagesModalOpen(true)}
+                 className="py-4 px-6 rounded-2xl bg-neutral-800 hover:bg-neutral-700 active:scale-[0.98] transition-all font-semibold flex flex-col items-center justify-center gap-1 hover:text-pink-400 relative"
+               >
+                  <MessageSquare className="w-5 h-5" />
+                  <span className="text-xs">Messages</span>
+                  {messages.length > 0 && (
+                    <span className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full border-2 border-neutral-900"></span>
+                  )}
+               </button>
+
+              <button
+                 onClick={() => setAnalyticsModalOpen(true)}
+                 className="py-4 px-6 rounded-2xl bg-neutral-800 hover:bg-neutral-700 active:scale-[0.98] transition-all font-semibold flex flex-col items-center justify-center gap-1 hover:text-blue-400 relative"
+               >
+                  <BarChart3 className="w-5 h-5" />
+                  <span className="text-xs">Analytics</span>
+               </button>
+           </div>
+
+           {/* Profile Card (Mini) */}
+           <div className="bg-neutral-900/50 border border-white/5 p-6 rounded-3xl flex items-center gap-6">
+              <div className="relative group cursor-pointer" onClick={() => setProfilePicModalOpen(true)}>
+                 <img
+                   src={profilePic || "https://via.placeholder.com/150"}
+                   alt="Profile"
+                   className="w-20 h-20 rounded-full object-cover border-4 border-neutral-800 group-hover:border-indigo-500 transition-colors"
+                 />
+                 <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Edit2 className="w-5 h-5 text-white" />
+                 </div>
+              </div>
+              <div className="flex-1">
+                 <h2 className="text-xl font-bold">{username}</h2>
+                 <p className="text-sm text-neutral-400 line-clamp-2 mt-1">{bio || "No bio set yet."}</p>
+                 <button onClick={() => setBioModalOpen(true)} className="text-xs text-indigo-400 font-semibold mt-2 hover:underline">Edit Bio</button>
+              </div>
+           </div>
+
+           {/* Links Manager */}
+           <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold">Your Links</h3>
+                <span className="text-xs font-mono bg-neutral-800 px-2 py-1 rounded text-neutral-400">{links.length} Links</span>
+              </div>
+              
+              {allCategories.map(category => {
+                 const catLinks = groupedLinks[category];
+                 if (catLinks.length === 0) return null;
+
+                 return (
+                  <div key={category} className="space-y-3">
+                    <h4 className="text-sm uppercase tracking-widest font-bold text-neutral-500 pl-1">{category || "Uncategorized"}</h4>
+                    <div className="grid gap-3">
+                      {catLinks.map((link) => {
+                        const Icon = iconMap[link.iconType] || LinkIcon;
+                        return (
+                          <div
+                            key={link.id}
+                            className="group flex items-center justify-between p-4 rounded-2xl bg-neutral-800/40 border border-white/5 hover:border-indigo-500/30 hover:bg-neutral-800 transition-all cursor-move"
+                          >
+                            <div className="flex items-center gap-4 overflow-hidden">
+                              <div className="p-3 bg-neutral-900 rounded-xl text-neutral-400 group-hover:text-white transition-colors">
+                                 <Icon className="w-5 h-5" />
+                              </div>
+                              <div className="flex flex-col min-w-0">
+                                 <h4 className="font-bold truncate group-hover:text-indigo-400 transition-colors">{link.title}</h4>
+                                 <a href={link.url} target="_blank" rel="noreferrer" className="text-xs text-neutral-500 truncate hover:underline">{link.url}</a>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity translate-x-4 group-hover:translate-x-0">
+                               <button 
+                                 onClick={() => handleEditLink(link)} 
+                                 className="p-2 hover:bg-white/10 rounded-lg text-neutral-400 hover:text-white transition"
+                               >
+                                 <Edit2 className="w-4 h-4" />
+                               </button>
+                               <button 
+                                 onClick={() => handleDeleteLink(link.id)} 
+                                 className="p-2 hover:bg-red-500/10 rounded-lg text-neutral-400 hover:text-red-500 transition"
+                               >
+                                 <Trash2 className="w-4 h-4" />
+                               </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                 );
+              })}
+              
+              {links.length === 0 && (
+                <div className="text-center py-12 border-2 border-dashed border-neutral-800 rounded-3xl">
+                   <p className="text-neutral-500">You haven't added any links yet.</p>
+                   <button onClick={handleAddLink} className="text-indigo-400 font-bold mt-2 hover:underline">Get started</button>
+                </div>
+              )}
+           </div>
         </div>
 
-        {/* Profile Actions */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-10">
-          <button
-            onClick={() => setProfilePicModalOpen(true)}
-            className="flex items-center justify-center gap-2 font-bold py-3 px-6 rounded-xl transition bg-orange-500 text-black"
-          >
-            <User /> Change Profile Picture
-          </button>
-          <button
-            onClick={() => setBioModalOpen(true)}
-            className="flex items-center justify-center gap-2 font-bold py-3 px-6 rounded-xl transition bg-orange-500 text-black"
-          >
-            <Edit2 /> Edit Bio
-          </button>
-          <button
-            onClick={handleAddLink}
-            className="flex items-center justify-center gap-2 font-bold py-3 px-6 rounded-xl transition bg-orange-500 text-black"
-          >
-            <PlusCircle /> Add New Link
-          </button>
-          <button
-            onClick={() => setThemeModalOpen(true)}
-            className="flex items-center justify-center gap-2 font-bold py-3 px-6 rounded-xl transition bg-orange-500 text-black"
-          >
-            <Palette /> Customize Theme
-          </button>
-          <button
-            onClick={handlePreview}
-            className="flex items-center justify-center gap-2 font-bold py-3 px-6 rounded-xl transition border border-orange-500 text-orange-500 bg-transparent"
-          >
-            <Eye /> Preview Links
-          </button>
-          <button
-            onClick={handleShare}
-            className="flex items-center justify-center gap-2 font-bold py-3 px-6 rounded-xl transition border border-green-500 text-green-500 bg-transparent hover:bg-green-500 hover:text-black"
-          >
-            <Share /> Share Link
-          </button>
-        </div>
+        {/* Right Column: Sticky Phone Preview */}
+        <div className="hidden lg:block w-[400px] shrink-0">
+           <div className="sticky top-24">
+              <div className="text-center mb-4">
+                 <span className="text-xs font-bold uppercase tracking-widest text-neutral-500">Live Preview</span>
+              </div>
+              
+              {/* Phone Mockup Reused Logic but positioned in the grid */}
+              <div className="relative w-[320px] h-[640px] mx-auto border-[14px] border-neutral-900 rounded-[3rem] shadow-2xl bg-neutral-900 overflow-hidden ring-1 ring-white/10">
+                 {/* Notch */}
+                 <div className="absolute top-0 left-1/2 -translate-x-1/2 h-[28px] w-[120px] bg-black rounded-b-[1.2rem] z-20 flex justify-center items-center">
+                    <div className="w-16 h-1.5 bg-neutral-800/50 rounded-full"></div>
+                 </div>
 
-        {/* Links List */}
-        <div className="flex flex-col gap-6">
-          {allCategories.map(category => (
-            <div key={category}>
-              <h2 className="text-xl font-bold mb-2 text-orange-400">
-               {!category ? "Other" : category}
-              </h2>
-              <div className="flex flex-col gap-2">
-                {groupedLinks[category].length === 0 ? (
-                  <p className="text-neutral-400 text-sm">No links in this category.</p>
-                ) : (
-                  groupedLinks[category].map((link) => {
-                    const Icon = iconMap[link.iconType] || LinkIcon;
-                    return (
-                      <div
-                        key={link.id}
-                        className="flex justify-between items-center w-full hover:scale-105 transition-transform p-4 rounded-xl bg-neutral-800"
-                      >
-                        <a
-                          href={link.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex items-center gap-3 font-bold text-white"
+                 {/* Screen */}
+                 <div 
+                    className="w-full h-full overflow-y-auto custom-scrollbar flex flex-col items-center pt-12 pb-8 px-5 relative transition-colors duration-500"
+                    style={{
+                      backgroundColor: safeCustomTheme.backgroundColor,
+                      fontFamily: safeCustomTheme.fontFamily,
+                      color: safeCustomTheme.textColor
+                    }}
+                  >
+                      {/* Using the safeCustomTheme to render live preview content */}
+                      {/* Profile Pic */}
+                      <div className="relative mb-6 z-10">
+                        <div className="w-24 h-24 rounded-full border-4 shadow-xl flex items-center justify-center text-4xl font-bold overflow-hidden bg-neutral-100"
+                           style={{
+                             borderColor: safeCustomTheme.primaryColor,
+                           }}
                         >
-                          <Icon /> {link.title}
-                        </a>
-                        <div className="flex gap-3">
-                          <button 
-                            onClick={() => handleEditLink(link)} 
-                            className="transition text-white"
-                          >
-                            <Edit2 />
-                          </button>
-                          <button 
-                            onClick={() => handleDeleteLink(link.id)} 
-                            className="hover:text-red-500 transition text-white"
-                          >
-                            <Trash2 />
-                          </button>
+                          {profilePic ? (
+                            <img src={profilePic} alt="Preview" className="w-full h-full object-cover" />
+                          ) : (
+                            <div style={{ color: safeCustomTheme.primaryColor }}>U</div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="text-center w-full z-10 mb-8 space-y-2">
+                        <h1 className="text-xl font-bold tracking-tight">@{username}</h1>
+                        <p className="text-sm opacity-80 leading-relaxed line-clamp-3">
+                          {bio || "Your bio will appear here..."}
+                        </p>
+                      </div>
+
+                      <div className="w-full flex flex-col gap-3 z-10 pb-10">
+                        {links.length === 0 ? (
+                           <div className="w-full py-4 text-center opacity-50 border border-dashed border-current rounded-xl">No links</div>
+                        ) : (
+                           links.map((link) => {
+                             const Icon = iconMap[link.iconType] || LinkIcon;
+                             return (
+                               <div
+                                key={link.id}
+                                className="relative flex items-center justify-between px-4 py-3.5 rounded-xl shadow-sm transition-transform w-full text-left font-medium"
+                                style={{
+                                  backgroundColor: safeCustomTheme.primaryColor,
+                                  color: safeCustomTheme.backgroundColor === "#ffffff" ? "#000000" : "#ffffff", // basic contrast logic since we can't fully calculate here easily without helper
+                                  opacity: 0.9
+                                }}
+                              >
+                                <span className="flex items-center gap-3">
+                                  <Icon className="w-4 h-4" />
+                                  <span className="truncate max-w-[150px]">{link.title}</span>
+                                </span>
+                              </div>
+                             );
+                           })
+                        )}
+                      </div>
+                  </div>
+              </div>
+
+              <div className="text-center mt-6">
+                 <button 
+                  onClick={handlePreview} 
+                  className="px-6 py-2.5 rounded-full border border-white/20 text-sm font-semibold text-white hover:bg-white hover:text-black transition-all duration-300 flex items-center justify-center gap-2 mx-auto active:scale-95 shadow-lg shadow-black/20"
+                >
+                    <Eye className="w-4 h-4" /> View Live Page
+                 </button>
+              </div>
+           </div>
+        </div>
+      </div>
+
+      {/* ------------------- Messages Modal ------------------- */}
+      {messagesModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+          <div className="bg-neutral-900 p-6 rounded-xl w-full max-w-md relative max-h-[90vh] overflow-y-auto custom-scrollbar mx-4">
+            <button onClick={() => setMessagesModalOpen(false)} className="absolute top-4 right-4 text-neutral-400 hover:text-orange-500">
+              <X />
+            </button>
+            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+              <MessageSquare /> Inbox <span className="text-sm opacity-50 font-normal">({messages.length})</span>
+            </h2>
+            
+            <div className="space-y-4">
+              {messagesLoading ? (
+                <div className="text-center opacity-50 py-10">Loading messages...</div>
+              ) : messages.length === 0 ? (
+                <div className="text-center opacity-50 py-10 border border-dashed border-white/10 rounded-xl">
+                  No messages yet. <br />
+                  <span className="text-xs">Share your link to get questions!</span>
+                </div>
+              ) : (
+                messages.map(msg => (
+                  <div key={msg.id} className="bg-neutral-800/50 p-4 rounded-xl border border-white/5 relative group">
+                    <p className="text-sm text-neutral-200 mb-2 leading-relaxed">"{msg.text}"</p>
+                    <div className="flex items-center justify-between mt-2 opacity-50 text-xs">
+                       <span>{msg.createdAt?.toDate ? msg.createdAt.toDate().toLocaleDateString() : 'Just now'}</span>
+                       <button 
+                        onClick={() => handleDeleteMessage(msg.id)}
+                        className="p-1.5 hover:bg-red-500/20 hover:text-red-500 rounded transition"
+                       >
+                         <Trash className="w-4 h-4" />
+                       </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ------------------- Analytics Modal ------------------- */}
+      {analyticsModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+          <div className="bg-neutral-900 p-6 rounded-xl w-full max-w-md relative max-h-[90vh] overflow-y-auto custom-scrollbar mx-4">
+            <button onClick={() => setAnalyticsModalOpen(false)} className="absolute top-4 right-4 text-neutral-400 hover:text-orange-500">
+              <X />
+            </button>
+            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+              <BarChart3 /> Analytics
+            </h2>
+            
+            {/* Stats Overview */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="bg-gradient-to-br from-indigo-500/20 to-purple-500/20 p-4 rounded-xl border border-white/5">
+                <div className="text-3xl font-bold">{links.length}</div>
+                <div className="text-xs opacity-50 mt-1">Total Links</div>
+              </div>
+              <div className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 p-4 rounded-xl border border-white/5">
+                <div className="text-3xl font-bold">{totalClicks}</div>
+                <div className="text-xs opacity-50 mt-1">Total Clicks</div>
+              </div>
+            </div>
+
+            {/* Top Links */}
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold opacity-50 mb-3">🏆 TOP PERFORMING LINKS</h3>
+              <div className="space-y-3">
+                {topLinks.length === 0 ? (
+                  <div className="text-center opacity-50 py-6 border border-dashed border-white/10 rounded-xl text-sm">
+                    No clicks yet. Share your link!
+                  </div>
+                ) : (
+                  topLinks.map((link, idx) => {
+                    const Icon = iconMap[link.iconType] || LinkIcon;
+                    const percentage = maxClicks > 0 ? ((link.clicks || 0) / maxClicks) * 100 : 0;
+                    return (
+                      <div key={link.id} className="bg-neutral-800/50 p-3 rounded-xl border border-white/5">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">{idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}</span>
+                            <Icon className="w-4 h-4" />
+                            <span className="text-sm font-medium truncate max-w-[120px]">{link.title}</span>
+                          </div>
+                          <span className="text-sm font-bold">{link.clicks || 0}</span>
+                        </div>
+                        <div className="w-full bg-neutral-700 rounded-full h-1.5 overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500"
+                            style={{ width: `${percentage}%` }}
+                          />
                         </div>
                       </div>
                     );
@@ -479,14 +731,33 @@ useEffect(() => {
                 )}
               </div>
             </div>
-          ))}
+
+            {/* All Links */}
+            <div>
+              <h3 className="text-sm font-semibold opacity-50 mb-3">📊 ALL LINKS</h3>
+              <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
+                {links.map(link => {
+                  const Icon = iconMap[link.iconType] || LinkIcon;
+                  return (
+                    <div key={link.id} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-neutral-800/50 transition">
+                      <div className="flex items-center gap-2">
+                        <Icon className="w-4 h-4 opacity-50" />
+                        <span className="text-sm truncate max-w-[150px]">{link.title}</span>
+                      </div>
+                      <span className="text-sm font-semibold opacity-75">{link.clicks || 0} clicks</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ------------------- Bio Modal ------------------- */}
       {bioModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-          <div className="bg-neutral-900 p-6 rounded-xl w-11/12 max-w-md relative">
+          <div className="bg-neutral-900 p-6 rounded-xl w-full max-w-md relative max-h-[90vh] overflow-y-auto custom-scrollbar mx-4">
             <button onClick={() => setBioModalOpen(false)} className="absolute top-4 right-4 text-neutral-400 hover:text-orange-500">
               <X />
             </button>
@@ -494,19 +765,23 @@ useEffect(() => {
               <Edit2 /> Edit Bio
             </h2>
             <textarea
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              className="w-full p-3 rounded-lg bg-neutral-800 text-white placeholder:text-neutral-400"
+              value={tempBio}
+              onChange={(e) => setTempBio(e.target.value)}
+              className="w-full p-3 rounded-lg bg-neutral-800 text-white placeholder:text-neutral-400 focus:ring-2 focus:ring-orange-500 outline-none"
               rows={5}
+              placeholder="Tell the world about yourself..."
             />
             <button
-               onClick={() => {
-                handleSaveBio(bio); // save to Firestore
+               onClick={async () => {
+                await handleSaveBio(tempBio); // save to Firestore
                 setBioModalOpen(false); // close modal
-              }} // pass the actual string, not the event
-              className="mt-4 w-full bg-orange-500 text-black font-bold py-3 rounded-xl hover:bg-orange-600 transition flex items-center justify-center gap-2"
+              }} 
+              disabled={bioLoading}
+              className={`mt-4 w-full font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 ${
+                  bioLoading ? "bg-gray-600 cursor-not-allowed" : "bg-orange-500 text-black hover:bg-orange-600"
+              }`}
             >
-              <Edit2 /> Save Bio
+              {bioLoading ? "Saving..." : <><Edit2 className="w-4 h-4" /> Save Bio</>}
             </button>
           </div>
         </div>
@@ -517,7 +792,7 @@ useEffect(() => {
       {/* ------------------- Profile Pic Modal ------------------- */}
       {profilePicModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-          <div className="bg-neutral-900 p-6 rounded-xl w-11/12 max-w-md relative">
+          <div className="bg-neutral-900 p-6 rounded-xl w-full max-w-md relative max-h-[90vh] overflow-y-auto custom-scrollbar mx-4">
             <button
               onClick={() => setProfilePicModalOpen(false)}
               className="absolute top-4 right-4 text-neutral-400 hover:text-orange-500"
@@ -578,7 +853,7 @@ useEffect(() => {
       {/* ------------------- Add/Edit Link Modal ------------------- */}
       {modalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-          <div className="bg-neutral-900 p-6 rounded-xl w-11/12 max-w-md relative">
+          <div className="bg-neutral-900 p-6 rounded-xl w-full max-w-md relative max-h-[90vh] overflow-y-auto custom-scrollbar mx-4">
             <button onClick={() => setModalOpen(false)} className="absolute top-4 right-4 text-neutral-400 hover:text-orange-500">
               <X />
             </button>
@@ -676,7 +951,7 @@ useEffect(() => {
       {/* ------------------- Theme Selection Modal ------------------- */}
       {themeModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-          <div className="bg-neutral-900 p-6 rounded-xl w-11/12 max-w-md relative overflow-y-auto max-h-[90vh]">
+          <div className="bg-neutral-900 p-6 rounded-xl w-full max-w-md relative max-h-[90vh] overflow-y-auto custom-scrollbar mx-4">
             <button
               onClick={() => setThemeModalOpen(false)}
               className="absolute top-4 right-4 text-neutral-400 hover:text-orange-500"
@@ -702,12 +977,12 @@ useEffect(() => {
                     backgroundColor: "#fff",
                     color: "#222",
                     fontWeight: 600,
-                    fontFamily: customTheme.fontFamily,
+                    fontFamily: safeCustomTheme.fontFamily,
                   }}
                 >
                   <span
                     className="mb-2 block w-6 h-6 rounded-full border"
-                    style={{ backgroundColor: customTheme.primaryColor, borderColor: customTheme.secondaryColor }}
+                    style={{ backgroundColor: safeCustomTheme.primaryColor, borderColor: safeCustomTheme.secondaryColor }}
                   ></span>
                   <span>None (Custom)</span>
                 </button>
@@ -749,13 +1024,13 @@ useEffect(() => {
                     <div className="flex gap-2">
                       <input
                         type="color"
-                        value={customTheme[key]}
+                        value={safeCustomTheme[key]}
                         onChange={(e) => setCustomTheme({ [key]: e.target.value, ...(key === "backgroundColor" ? { textColor: getContrastColor(e.target.value) } : {}) })}
                         className="w-10 h-10 rounded cursor-pointer"
                       />
                       <input
                         type="text"
-                        value={customTheme[key]}
+                        value={safeCustomTheme[key]}
                         onChange={(e) => setCustomTheme({ [key]: e.target.value, ...(key === "backgroundColor" ? { textColor: getContrastColor(e.target.value) } : {}) })}
                         className="flex-1 p-2 rounded-lg bg-neutral-800 text-white"
                       />
@@ -769,7 +1044,7 @@ useEffect(() => {
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-3">Font Family</h3>
               <select
-                value={customTheme.fontFamily}
+                value={safeCustomTheme.fontFamily}
                 onChange={(e) => setCustomTheme({ fontFamily: e.target.value })}
                 className="w-full p-3 rounded-lg bg-neutral-800 text-white"
               >
@@ -787,101 +1062,118 @@ useEffect(() => {
             </div>
 
             {/* Preview */}
-            <div className="mb-6 p-4 rounded-lg" style={{ backgroundColor: customTheme.backgroundColor }}>
-              <h3 className="text-lg font-semibold mb-2" style={{ color: customTheme.textColor, fontFamily: customTheme.fontFamily }}>
-                Theme Preview
-              </h3>
-              <div className="flex gap-2 mb-2">
-                <button className="px-3 py-1 rounded" style={{ backgroundColor: customTheme.primaryColor, color: customTheme.backgroundColor === "#ffffff" ? "#000000" : "#ffffff" }}>Primary Button</button>
-                <button className="px-3 py-1 rounded" style={{ backgroundColor: customTheme.secondaryColor, color: customTheme.backgroundColor === "#ffffff" ? "#000000" : "#ffffff" }}>Secondary Button</button>
+              <div className="mb-6 p-4 rounded-lg" style={{ backgroundColor: safeCustomTheme.backgroundColor }}>
+                <h3 className="text-lg font-semibold mb-2" style={{ color: safeCustomTheme.textColor, fontFamily: safeCustomTheme.fontFamily }}>
+                  Theme Preview
+                </h3>
+                <div className="flex gap-2 mb-2">
+                  <button className="px-3 py-1 rounded" style={{ backgroundColor: safeCustomTheme.primaryColor, color: safeCustomTheme.backgroundColor === "#ffffff" ? "#000000" : "#ffffff" }}>Primary Button</button>
+                  <button className="px-3 py-1 rounded" style={{ backgroundColor: safeCustomTheme.secondaryColor, color: safeCustomTheme.backgroundColor === "#ffffff" ? "#000000" : "#ffffff" }}>Secondary Button</button>
+                </div>
+                <p style={{ color: safeCustomTheme.textColor, fontFamily: safeCustomTheme.fontFamily }}>This is how your text will look with the selected theme.</p>
               </div>
-              <p style={{ color: customTheme.textColor, fontFamily: customTheme.fontFamily }}>This is how your text will look with the selected theme.</p>
-            </div>
 
-            {/* Save Button */}
-            <button
-              onClick={async () => {
-                console.log("Save button clicked");
-                try {
-                  await handleSaveTheme();
-                  console.log("Theme saved successfully!");
-                } catch (err) {
-                  console.error("Error saving theme:", err);
-                }
-                setThemeModalOpen(false);
-                console.log("themeModalOpen after closing:", themeModalOpen);
-              }}
-              className="w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition"
-              style={{
-                backgroundColor: customTheme.primaryColor,
-                color: customTheme.backgroundColor === "#ffffff" ? "#000000" : "#ffffff",
-              }}
-            >
-              <Palette /> Save Theme
-            </button>
-            {/* ------------------- Theme Card Preview ------------------- */}
-          <div className="mb-6 mt-12 flex justify-center">
-            <div
-              className="w-full max-w-xs bg-white/90 rounded-3xl shadow-2xl flex flex-col items-center relative"
-              style={{
-                border: `2px solid ${customTheme.primaryColor}`,
-                boxShadow: `0 8px 32px 0 ${customTheme.primaryColor}33`,
-              }}
-            >
-              {/* Profile Pic - Overlapping */}
-              <div className="absolute -top-10 left-1/2 -translate-x-1/2">
-                <div
-                  className="w-20 h-20 rounded-full border-4 shadow-lg flex items-center justify-center text-3xl font-bold overflow-hidden"
+              {/* Save Button */}
+              <button
+                onClick={async () => {
+                  try {
+                    await handleSaveTheme();
+                  } catch (err) {
+                    console.error("Error saving theme:", err);
+                  }
+                  setThemeModalOpen(false);
+                }}
+                className="w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition"
+                style={{
+                  backgroundColor: safeCustomTheme.primaryColor,
+                  color: safeCustomTheme.backgroundColor === "#ffffff" ? "#000000" : "#ffffff",
+                }}
+              >
+                <Palette /> Save Theme
+              </button>
+              {/* ------------------- Theme Card Preview ------------------- */}
+            <div className="mb-6 mt-12 flex justify-center">
+              {/* Phone Mockup Container */}
+              <div className="relative w-[300px] h-[600px] border-[14px] border-neutral-900 rounded-[2.5rem] shadow-2xl bg-neutral-900 overflow-hidden ring-4 ring-neutral-800">
+                {/* Dynamic Island / Notch */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 h-[24px] w-[100px] bg-black rounded-b-[1rem] z-20 flex justify-center items-center">
+                   <div className="w-12 h-1 bg-neutral-800 rounded-full opacity-30"></div>
+                </div>
+
+                {/* Screen Content */}
+                <div 
+                  className="w-full h-full overflow-y-auto custom-scrollbar flex flex-col items-center pt-10 pb-6 px-4 relative transition-colors duration-500"
                   style={{
-                    background: customTheme.primaryColor,
-                    color: customTheme.backgroundColor,
-                    borderColor: customTheme.secondaryColor,
+                    backgroundColor: safeCustomTheme.backgroundColor,
+                    fontFamily: safeCustomTheme.fontFamily,
+                    color: safeCustomTheme.textColor
                   }}
                 >
-                  U
-                </div>
-              </div>
-              <div className="pt-14 pb-4 px-4 w-full flex flex-col items-center">
-                <div
-                  className="text-base font-semibold mb-1"
-                  style={{ color: customTheme.primaryColor }}
-                >
-                  Good Afternoon, welcome to my page 👋
-                </div>
-                <h1
-                  className="text-lg font-bold mb-1"
-                  style={{ color: customTheme.textColor }}
-                >
-                  Username
-                </h1>
-                <p
-                  className="text-center mb-3"
-                  style={{ color: customTheme.textColor, opacity: 0.8 }}
-                >
-                  This is a bio preview.
-                </p>
-                <div className="w-full flex flex-col gap-2">
-                  <button
-                    className="flex items-center gap-3 font-bold px-4 py-3 rounded-full shadow transition w-full text-left text-base"
-                    style={{
-                      background: customTheme.primaryColor,
-                      color: customTheme.backgroundColor,
-                      fontFamily: customTheme.fontFamily,
-                    }}
-                  >
-                    <LinkIcon /> Example Link
-                  </button>
-                  <button
-                    className="flex items-center gap-3 font-bold px-4 py-3 rounded-full shadow transition w-full text-left text-base"
-                    style={{
-                      background: customTheme.primaryColor,
-                      color: customTheme.backgroundColor,
-                      fontFamily: customTheme.fontFamily,
-                    }}
-                  >
-                    <LinkIcon /> Another Link
-                  </button>
-                </div>
+                    {/* Decorative Background Elem (if needed) */}
+                    <div className="absolute inset-0 pointer-events-none opacity-5 bg-gradient-to-b from-white/10 to-transparent"></div>
+
+                    {/* Profile Pic */}
+                    <div className="relative mb-4 z-10 group">
+                      <div className="absolute inset-0 rounded-full blur-md opacity-50 animate-pulse" style={{ backgroundColor: safeCustomTheme.primaryColor }}></div>
+                      <div
+                        className="w-24 h-24 rounded-full border-4 shadow-xl flex items-center justify-center text-4xl font-bold overflow-hidden relative z-10"
+                        style={{
+                          borderColor: safeCustomTheme.primaryColor,
+                          backgroundColor: safeCustomTheme.backgroundColor === "#ffffff" ? "#f3f4f6" : "#262626",
+                          color: safeCustomTheme.primaryColor
+                        }}
+                      >
+                        {profilePic ? (
+                          <img src={profilePic} alt="Preview" className="w-full h-full object-cover" />
+                        ) : (
+                          "U"
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Username & Bio */}
+                    <div className="text-center w-full z-10 mb-6">
+                      <div className="inline-block px-3 py-1 rounded-full text-xs font-bold mb-2 shadow-sm" style={{ backgroundColor: safeCustomTheme.primaryColor + '30', color: safeCustomTheme.primaryColor }}>
+                         @{username}
+                      </div>
+                      <h1 className="text-xl font-bold mb-1 tracking-tight" style={{ color: safeCustomTheme.textColor }}>
+                         {bio ? "My Links" : "Welcome"}
+                      </h1>
+                       <p className="text-sm opacity-80 px-2 line-clamp-3 leading-relaxed" style={{ color: safeCustomTheme.textColor }}>
+                        {bio || "This is a preview of your bio. It looks great!"}
+                      </p>
+                    </div>
+
+                    {/* Links */}
+                    <div className="w-full flex flex-col gap-3 z-10">
+                      {[1, 2].map((_, i) => (
+                        <div
+                          key={i}
+                          className="relative group w-full"
+                        >
+                           <div className="absolute inset-0 rounded-xl blur opacity-20 group-hover:opacity-40 transition duration-500" style={{ backgroundColor: safeCustomTheme.primaryColor }}></div>
+                           <button
+                            className="relative flex items-center justify-between px-4 py-3.5 rounded-xl shadow-md transition-all duration-300 w-full text-left font-medium active:scale-95 hover:-translate-y-0.5"
+                            style={{
+                              background: safeCustomTheme.primaryColor,
+                              color: safeCustomTheme.backgroundColor === "#ffffff" ? "#000000" : "#ffffff", // Dynamic contrast for buttons
+                              border: `1px solid ${safeCustomTheme.secondaryColor}40`
+                            }}
+                        >
+                          <span className="flex items-center gap-3">
+                            <LinkIcon className="w-5 h-5 opacity-80" />
+                            {i === 0 ? "My Portfolio" : "Instagram"}
+                          </span>
+                           <Share className="w-4 h-4 opacity-50" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Footer Branding */}
+                  <div className="mt-auto pt-8 opacity-40 text-[10px] font-bold tracking-widest uppercase">
+                    Linkify
+                  </div>
               </div>
             </div>
           </div>

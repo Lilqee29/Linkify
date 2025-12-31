@@ -24,12 +24,62 @@ export const useDashboardTheme = () => {
   });
 
   const predefinedThemes = {
-    classic: { primaryColor: "#a78bfa", secondaryColor: "#f472b6", backgroundColor: "#0f0f0f", textColor: getContrastColor("#0f0f0f"), fontFamily: "'Inter', sans-serif" },
-    ocean: { primaryColor: "#38bdf8", secondaryColor: "#0ea5e9", backgroundColor: "#082f49", textColor: getContrastColor("#082f49"), fontFamily: "'Inter', sans-serif" },
-    forest: { primaryColor: "#34d399", secondaryColor: "#059669", backgroundColor: "#064e3b", textColor: getContrastColor("#064e3b"), fontFamily: "'Inter', sans-serif" },
-    sunset: { primaryColor: "#f59e0b", secondaryColor: "#ef4444", backgroundColor: "#7c2d12", textColor: "#111827", fontFamily: "'Inter', sans-serif" },
-    cartoon: { primaryColor: "#ec4899", secondaryColor: "#8b5cf6", backgroundColor: "#fdf4ff", textColor: getContrastColor("#fdf4ff"), fontFamily: "'Comic Neue', cursive" },
-    playful: { primaryColor: "#f43f5e", secondaryColor: "#3b82f6", backgroundColor: "#fdf2f8", textColor: getContrastColor("#fdf2f8"), fontFamily: "'Bubblegum Sans', cursive" },
+    midnight: {
+      primaryColor: "#6366f1", // Indigo 500
+      secondaryColor: "#818cf8", // Indigo 400
+      backgroundColor: "#000000", // Pure Black
+      textColor: "#ffffff",
+      fontFamily: "'Inter', sans-serif"
+    },
+    luxury: {
+      primaryColor: "#d4af37", // Gold
+      secondaryColor: "#c5a028", // Darker Gold
+      backgroundColor: "#1c1c1c", // Rich Dark Grey
+      textColor: "#f3f3f3",
+      fontFamily: "'Playfair Display', serif"
+    },
+    cyberpunk: {
+      primaryColor: "#00ff9d", // Neon Green
+      secondaryColor: "#ff0055", // Neon Pink
+      backgroundColor: "#0b0b19", // Deep Space Blue
+      textColor: "#e0e0e0",
+      fontFamily: "'Orbitron', sans-serif"
+    },
+    minimalist: {
+      primaryColor: "#171717", // Neutral 900
+      secondaryColor: "#525252", // Neutral 600
+      backgroundColor: "#ffffff", // Pure White
+      textColor: "#171717",
+      fontFamily: "'DM Sans', sans-serif"
+    },
+    lush: {
+      primaryColor: "#10b981", // Emerald 500
+      secondaryColor: "#34d399", // Emerald 400
+      backgroundColor: "#064e3b", // Emerald 900
+      textColor: "#ecfdf5",
+      fontFamily: "'Montserrat', sans-serif"
+    },
+    sunsetPro: {
+      primaryColor: "#f97316", // Orange 500
+      secondaryColor: "#db2777", // Pink 600
+      backgroundColor: "#4c0519", // Rose 950
+      textColor: "#fff1f2",
+      fontFamily: "'Poppins', sans-serif"
+    },
+    dream: {
+      primaryColor: "#8b5cf6", // Violet
+      secondaryColor: "#c4b5fd", // Soft Violet
+      backgroundColor: "#f5f3ff", // Very Light Violet
+      textColor: "#4c1d95", // Deep Violet
+      fontFamily: "'Quicksand', sans-serif"
+    },
+    slate: {
+      primaryColor: "#f8fafc", // Slate 50
+      secondaryColor: "#94a3b8", // Slate 400
+      backgroundColor: "#0f172a", // Slate 900
+      textColor: "#f1f5f9",
+      fontFamily: "'Work Sans', sans-serif"
+    }
   };
 
   // Load user's saved theme from Firestore on mount
