@@ -2,13 +2,16 @@
 import { useState, useEffect } from "react";
 import { collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { db, auth } from "./firebase"; // adjust path if needed
+import { useAlert } from "../contexts/AlertContext";
 
 export const useDashboardLinks = () => {
   const [links, setLinks] = useState([]);
   const [categories, setCategories] = useState(["Social", "Work", "Fun"]);
   const [newCategory, setNewCategory] = useState(""); // Added state for new category input
+  const { showAlert } = useAlert();
 
   // Load links from Firestore
+  // ... (lines 11-33)
   useEffect(() => {
     const fetchLinks = async () => {
       if (!auth.currentUser) return;
@@ -34,12 +37,12 @@ export const useDashboardLinks = () => {
   // Add or edit link
   const handleLinkSubmit = async (formData, editLink, setModalOpen) => {
     if (!auth.currentUser) {
-      alert("You need to be logged in to save links.");
+      showAlert("You need to be logged in to save links.", "warning");
       return;
     }
 
     if (!formData.title || !formData.url) {
-      alert("Title & URL are required!");
+      showAlert("Title & URL are required!", "error");
       return;
     }
 
@@ -63,7 +66,7 @@ export const useDashboardLinks = () => {
         await setDoc(linkRef, sanitizedData, { merge: true });
         
         setLinks(prev => prev.map(l => (l.id === editLink.id ? { ...l, ...sanitizedData } : l)));
-        alert("Link updated! 🎉");
+        showAlert("Link updated! 🎉", "success");
       } else {
         // Add new link
         const linksCol = collection(db, "users", auth.currentUser.uid, "links");
@@ -79,14 +82,14 @@ export const useDashboardLinks = () => {
         if (sanitizedData.category && !categories.includes(sanitizedData.category)) {
              setCategories(prev => [...prev, sanitizedData.category]);
         }
-        alert("Link added! 🚀");
+        showAlert("Link added! 🚀", "success");
       }
       
       setModalOpen(false);
 
     } catch (err) {
       console.error("Error saving link:", err);
-      alert(`Failed to save link: ${err.message}`);
+      showAlert(`Failed to save link: ${err.message}`, "error");
     }
   };
 

@@ -1,12 +1,22 @@
-import React, { useState } from "react";
-import { Navigate, Link } from "react-router-dom";
-import { doSignInWithGoogle, doSignInWithEmailAndPasswordWithVerification } from "../../../firebase/auth";
+import React, { useState, useEffect } from "react";
+import { Navigate, Link, useLocation } from "react-router-dom";
+import { doSignInWithGoogle, doSignInWithEmailAndPasswordWithVerification, doResendVerificationEmail } from "../../../firebase/auth";
 import { useAuth } from "../../../contexts/authContext";
+import { useAlert } from "../../../contexts/AlertContext";
 import Navbar from "../../Navbar";
 import { Mail, Lock, AlertCircle, CheckCircle, Shield, RefreshCw } from "lucide-react";
 
 const Login = () => {
   const { userLoggedIn } = useAuth();
+  const { showAlert } = useAlert();
+  const location = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("verified") === "true") {
+      showAlert("Email Verified! ✅", "success", "Your account is now active. Please sign in to continue.");
+    }
+  }, [location, showAlert]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -79,7 +89,8 @@ const Login = () => {
         } else if (err.code === 'auth/network-request-failed') {
           errorMsg = "📡 Network error. Check your internet connection.";
         } else if (err.code === 'auth/popup-blocked') {
-          errorMsg = "🚫 Popup blocked. Please enable popups for this site.";
+          errorMsg = "🚫 Popup blocked. Our system just improved this, but if you still see this, please click 'Allow popups' in your browser address bar.";
+          showAlert("Popup Blocked!", "warning", "Please enable popups for this site in your browser settings to continue with Google.");
         }
         
         setErrorMessage(errorMsg);
@@ -90,14 +101,23 @@ const Login = () => {
 
   const handleResendVerification = async () => {
     if (isResendingVerification) return;
+    if (!email || !password) {
+      showAlert("Missing info!", "warning", "Please enter your email and password first so we can resend the link.");
+      return;
+    }
     
     setIsResendingVerification(true);
     try {
-      // This would need to be implemented to resend verification
-      // For now, show a message
-      setErrorMessage("Please check your email for the verification link. If you don't see it, check your spam folder.");
-    } catch {
-      setErrorMessage("Failed to resend verification email. Please try again.");
+      await doResendVerificationEmail(email, password);
+      showAlert("Verification Sent!", "success", "A new verification link has been sent to your inbox. Please check your email.");
+      setErrorMessage("");
+    } catch (err) {
+      let msg = "Failed to resend verification link.";
+      if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        msg = "Incorrect password. Please enter the correct password to resend verification.";
+      }
+      setErrorMessage(msg);
+      showAlert("Resend Failed", "error", msg);
     } finally {
       setIsResendingVerification(false);
     }

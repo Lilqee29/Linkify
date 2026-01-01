@@ -2,14 +2,16 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/authContext";
 import { PlusCircle, Eye, Edit2, Trash2, X, User, Image as ImageIcon, Palette, Pi, Share, MessageSquare, Trash, BarChart3 } from "lucide-react";
 import DashboardNavbar from "./DashboardNavbar";
-import { useNavigate } from "react-router-dom";
-import { useDashboardLinks } from "../../firebase/Dashboardlink"; // adjust path
-import { useDashboardProfile } from "../../firebase/Dashboardbio"; // adjust path
-import { useDashboardProfilePic } from "../../firebase/DashboardprofilePic"; // adjust path
-import { useDashboardTheme } from "../../firebase/useDashboardtheme"; // adjust path
+import { useNavigate, useLocation } from "react-router-dom";
+import { useDashboardLinks } from "../../firebase/Dashboardlink";
+import { useDashboardProfile } from "../../firebase/Dashboardbio";
+import { useDashboardProfilePic } from "../../firebase/DashboardprofilePic";
+import { useDashboardTheme } from "../../firebase/useDashboardtheme";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
 import { useDashboardMessages } from "../../firebase/DashboardMessages";
+import { useAlert } from "../../contexts/AlertContext";
+import Onboarding from "./Onboarding";
 
 
 
@@ -38,7 +40,8 @@ const Dashboard = () => {
   // eslint-disable-next-line no-unused-vars
   const { currentUser, updateProfile, loading } = useAuth(); // Assume useAuth returns loading
   const navigate = useNavigate();
-   const [username, setUsername] = useState("User");
+  const [username, setUsername] = useState("User");
+  const { showAlert } = useAlert();
 
    if (loading) {
      return <div className="min-h-screen bg-neutral-900 flex items-center justify-center text-white">Loading...</div>;
@@ -147,6 +150,23 @@ const saveProfilePic = async () => {
   const [messagesModalOpen, setMessagesModalOpen] = useState(false);
   const { messages, loading: messagesLoading, handleDeleteMessage } = useDashboardMessages();
   const [analyticsModalOpen, setAnalyticsModalOpen] = useState(false);
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const location = useLocation();
+
+  // Check for onboarding
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const hasOnboarded = localStorage.getItem('linkly_onboarded');
+    const forceTour = queryParams.get('tour') === 'true';
+
+    if (forceTour || !hasOnboarded) {
+      setTimeout(() => setOnboardingOpen(true), 1500);
+      // Clean up URL
+      if (forceTour) {
+         navigate(location.pathname, { replace: true });
+      }
+    }
+  }, [location]);
 
   // Analytics calculations
   const totalClicks = links.reduce((sum, link) => sum + (link.clicks || 0), 0);
@@ -278,7 +298,7 @@ const saveProfilePic = async () => {
     } else {
       // Fallback to copying to clipboard
       navigator.clipboard.writeText(publicUrl).then(() => {
-        alert("Link copied to clipboard! 📋\n\nShare this link with others to show them your profile.");
+        showAlert("Link copied to clipboard! 📋 Share this link with others to show them your profile.", "success");
       }).catch(() => {
         // Fallback for older browsers
         const textArea = document.createElement("textarea");
@@ -287,7 +307,7 @@ const saveProfilePic = async () => {
         textArea.select();
         document.execCommand("copy");
         document.body.removeChild(textArea);
-        alert("Link copied to clipboard! 📋\n\nShare this link with others to show them your profile.");
+        showAlert("Link copied to clipboard! 📋 Share this link with others to show them your profile.", "success");
       });
     }
   };
@@ -793,12 +813,23 @@ useEffect(() => {
       {profilePicModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
           <div className="bg-neutral-900 p-6 rounded-xl w-full max-w-md relative max-h-[90vh] overflow-y-auto custom-scrollbar mx-4">
-            <button
-              onClick={() => setProfilePicModalOpen(false)}
-              className="absolute top-4 right-4 text-neutral-400 hover:text-orange-500"
-            >
-              <X />
-            </button>
+            <div className="absolute top-4 right-4 flex items-center gap-2">
+              <button 
+                onClick={() => {
+                  setProfilePicModalOpen(false);
+                  setOnboardingOpen(true);
+                }}
+                className="text-xs text-indigo-400 hover:underline flex items-center gap-1"
+              >
+                Need help?
+              </button>
+              <button
+                onClick={() => setProfilePicModalOpen(false)}
+                className="text-neutral-400 hover:text-orange-500"
+              >
+                <X />
+              </button>
+            </div>
 
             <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
               <ImageIcon /> Change Profile Picture
@@ -1174,16 +1205,16 @@ useEffect(() => {
                   <div className="mt-auto pt-8 opacity-40 text-[10px] font-bold tracking-widest uppercase">
                     Linkify
                   </div>
+                </div>
               </div>
             </div>
-          </div>
-
           </div>
         </div>
       )}
 
+      {/* ------------------- Onboarding Modal ------------------- */}
+      <Onboarding isOpen={onboardingOpen} onClose={() => setOnboardingOpen(false)} />
     </div>
-    
   );
 };
 

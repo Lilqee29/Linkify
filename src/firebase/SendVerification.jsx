@@ -3,16 +3,17 @@ import { auth } from "./firebase";
 
 export const sendVerification = async (user) => {
   try {
+    const baseUrl = import.meta.env.VITE_APP_URL || "https://linkify-ruby.vercel.app";
+    
     const actionCodeSettings = {
-      url: window.location.origin + "/login", // Dynamic URL based on current domain
-      handleCodeInApp: true,
-      // Set verification link to expire in 2 minutes (120 seconds)
-      // Note: Firebase minimum is 1 hour, but we can handle this in our logic
+      // 🔹 Uses Vercel production URL with ?t= timestamp for 15-minute expiration
+      url: `${baseUrl}/verify-email?t=${Date.now()}`, 
+      handleCodeInApp: true, 
       iOS: {
-        bundleId: 'com.linkly.app'
+        bundleId: import.meta.env.VITE_APP_BUNDLE_ID
       },
       android: {
-        packageName: 'com.linkly.app',
+        packageName: import.meta.env.VITE_APP_PACKAGE_NAME,
         installApp: true,
         minimumVersion: '12'
       }

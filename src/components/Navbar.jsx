@@ -5,11 +5,13 @@ import logo from "../assets/logo.png";
 import { navItems } from "../constants";
 import { useAuth } from "../contexts/authContext";
 import { logOutUser } from "../firebase/logout";
+import { useAlert } from "../contexts/AlertContext";
 
 // eslint-disable-next-line no-unused-vars
 const Navbar = ({ onEditProfilePic }) => {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const { currentUser } = useAuth();
+  const { showAlert } = useAlert();
 
   const toggleNavbar = () => {
     setMobileDrawerOpen(!mobileDrawerOpen);
@@ -19,7 +21,7 @@ const Navbar = ({ onEditProfilePic }) => {
     try {
       await logOutUser();
     } catch (err) {
-      alert("Logout failed: " + err.message);
+      showAlert("Logout failed: " + err.message, "error");
     }
   };
 

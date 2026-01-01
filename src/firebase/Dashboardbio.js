@@ -2,12 +2,14 @@
 import { useState, useEffect } from "react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db, auth } from "./firebase";
+import { useAlert } from "../contexts/AlertContext";
 
 export const useDashboardProfile = () => {
   const [bio, setBio] = useState("");
+  const { showAlert } = useAlert();
 
   const [loading, setLoading] = useState(false);
-
+  // ... (rest of the code)
   // Load bio from Firestore
   useEffect(() => {
     const fetchBio = async () => {
@@ -32,7 +34,7 @@ export const useDashboardProfile = () => {
   // Save bio to Firestore
   const handleSaveBio = async (newBio) => {
     if (!auth.currentUser) {
-       alert("You must be logged in to save your bio.");
+       showAlert("You must be logged in to save your bio.", "warning");
        return;
     }
 
@@ -41,10 +43,10 @@ export const useDashboardProfile = () => {
       const userRef = doc(db, "users", auth.currentUser.uid);
       await setDoc(userRef, { bio: newBio }, { merge: true });
       setBio(newBio); // Update local state only after successful save
-      alert("Bio updated successfullly! 🚀");
+      showAlert("Bio updated successfullly! 🚀", "success");
     } catch (err) {
       console.error("Error saving bio:", err);
-      alert("Failed to save bio. Please try again.");
+      showAlert("Failed to save bio. Please try again.", "error");
     } finally {
       setLoading(false);
     }

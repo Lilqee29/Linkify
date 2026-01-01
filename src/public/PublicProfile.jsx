@@ -9,6 +9,7 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 import { sendMessageToUser } from "../firebase/DashboardMessages";
 import { trackLinkClick } from "../firebase/trackClick";
 import { db } from "../firebase/firebase";
+import { useAlert } from "../contexts/AlertContext";
 
 // Map icon type to components
 const iconMap = {
@@ -32,6 +33,7 @@ const PublicProfile = () => {
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { showAlert } = useAlert();
   const [localLinks, setLocalLinks] = useState([]);
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -59,7 +61,7 @@ const PublicProfile = () => {
       setMessageSent(true);
       setTimeout(() => setMessageSent(false), 3000);
     } else {
-      alert("Failed to send message. Please try again.");
+      showAlert("Failed to send message. Please try again.", "error");
     }
     setSendingMessage(false);
   };

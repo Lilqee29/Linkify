@@ -14,6 +14,7 @@ import {
   EllipsisVertical,
 } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
+import { useAlert } from "../contexts/AlertContext";
 
 // Map icon type to components
 const iconMap = {
@@ -36,6 +37,7 @@ const UserProfile = () => {
   const { username } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const { showAlert } = useAlert();
   const links = location.state?.links || [];
   const quickLinks = links.slice(0, 3);
   const bio = location.state?.bio || "Welcome to my links page 🚀";
@@ -77,7 +79,7 @@ const UserProfile = () => {
     } else {
       // Fallback to copying to clipboard
       navigator.clipboard.writeText(publicUrl).then(() => {
-        alert("Link copied to clipboard! 📋\n\nShare this link with others to show them your profile.");
+        showAlert("Link copied to clipboard! 📋 Share this link with others to show them your profile.", "success");
       }).catch(() => {
         // Fallback for older browsers
         const textArea = document.createElement("textarea");
@@ -86,7 +88,7 @@ const UserProfile = () => {
         textArea.select();
         document.execCommand("copy");
         document.body.removeChild(textArea);
-        alert("Link copied to clipboard! 📋\n\nShare this link with others to show them your profile.");
+        showAlert("Link copied to clipboard! 📋 Share this link with others to show them your profile.", "success");
       });
     }
   };

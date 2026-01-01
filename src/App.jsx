@@ -13,6 +13,7 @@ import Footer from "./components/Footer";
 // Auth Pages
 import Login from "./components/auth/login";
 import Register from "./components/auth/register";
+import VerifyEmail from "./components/auth/VerifyEmail";
 
 // Dashboard
 import Dashboard from "./components/dashboard/Dashboard";
@@ -25,6 +26,7 @@ import HelpPage from "./components/HelpPage";
 
 // Context
 import { AuthProvider, useAuth } from "./contexts/authContext";
+import { AlertProvider } from "./contexts/AlertContext";
 
 // ===== Landing Page Layout =====
 const Landing = () => (
@@ -65,6 +67,7 @@ function App() {
     { path: "/", element: <Landing /> },
     { path: "/login", element: <Login /> },
     { path: "/register", element: <Register /> },
+    { path: "/verify-email", element: <VerifyEmail /> },
     {
       path: "/dashboard",
       element: (
@@ -81,7 +84,11 @@ function App() {
 
   const routesElement = useRoutes(routesArray);
 
-  return <AuthProvider>{routesElement}</AuthProvider>;
+  return (
+    <AlertProvider>
+      <AuthProvider>{routesElement}</AuthProvider>
+    </AlertProvider>
+  );
 }
 
 export default App;

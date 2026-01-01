@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/authContext";
-import { X } from "lucide-react";
-import { doc, setDoc, getDoc, deleteDoc } from "firebase/firestore";
+import { X, HelpCircle, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
+import { doc, setDoc, getDoc, deleteDoc, collection, getDocs } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
 import { deleteUser, updatePassword, getAuth } from "firebase/auth"; // 🔹 for auth actions
+import { useAlert } from "../../contexts/AlertContext";
 
 
 
@@ -13,6 +15,7 @@ const UserSidebar = ({ isOpen, onClose }) => {
     currentUser?.displayName || currentUser?.email || "User"
   );
   const avatarSrc = currentUser?.photoURL || null;
+  const { showAlert } = useAlert();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newUsername, setNewUsername] = useState("");
@@ -71,7 +74,6 @@ const UserSidebar = ({ isOpen, onClose }) => {
       setUsername(newUsername);
       setIsModalOpen(false);
       setNewUsername("");
-      console.log("Username updated in Firestore!");
     } catch (err) {
       console.error("Error updating username:", err);
     }
@@ -82,7 +84,7 @@ const UserSidebar = ({ isOpen, onClose }) => {
     if (!currentUser) return;
     const userRef = doc(db, "users", currentUser.uid);
     const now = Date.now();
-    const expiresAt = now + 10 * 1000; // currently 10s for test; set 30*60*1000 for 30 mins
+    const expiresAt = now + 30 * 60 * 1000; // currently 10s for test;  30*60*1000 for 30 mins
 
     await setDoc(
       userRef,
@@ -90,7 +92,7 @@ const UserSidebar = ({ isOpen, onClose }) => {
       { merge: true }
     );
     setTimeLeft(expiresAt - now);
-    alert("Account deletion scheduled! You have 30 minutes to cancel.");
+    showAlert("Account deletion scheduled! You have 30 minutes to cancel.", "warning");
   };
 
   // Cancel deletion
@@ -99,37 +101,50 @@ const UserSidebar = ({ isOpen, onClose }) => {
     const userRef = doc(db, "users", currentUser.uid);
     await setDoc(userRef, { deleteRequest: null }, { merge: true });
     setTimeLeft(0);
-    alert("Account deletion canceled.");
+    showAlert("Account deletion canceled.", "info");
   };
 
   // 🔹 Delete user permanently (Firestore + Auth)
-const deleteUserAccount = async () => {
-  if (!currentUser) return;
+  const deleteUserAccount = async () => {
+    if (!currentUser) return;
 
-  const userRef = doc(db, "users", currentUser.uid);
-  const auth = getAuth(); // 👈 get the actual auth instance
-  const user = auth.currentUser; // 👈 Firebase user object
+    const authInstance = getAuth();
+    const user = authInstance.currentUser;
 
-  try {
-    // Delete Firestore document
-    await deleteDoc(userRef);
+    try {
+      // 1️⃣ Delete Links Subcollection
+      const linksRef = collection(db, "users", currentUser.uid, "links");
+      const linksSnap = await getDocs(linksRef);
+      const linkDeletions = linksSnap.docs.map(doc => deleteDoc(doc.ref));
+      await Promise.all(linkDeletions);
 
-    // Delete Auth account (must be real Firebase user)
-    if (user) {
-      await deleteUser(user);
-      alert("Account deleted permanently!");
-    } else {
-      alert("No authenticated user found.");
+      // 2️⃣ Delete Messages Subcollection
+      const messagesRef = collection(db, "users", currentUser.uid, "messages");
+      const messagesSnap = await getDocs(messagesRef);
+      const messageDeletions = messagesSnap.docs.map(doc => deleteDoc(doc.ref));
+      await Promise.all(messageDeletions);
+
+      // 3️⃣ Delete Main User Document
+      const userRef = doc(db, "users", currentUser.uid);
+      await deleteDoc(userRef);
+
+      // 4️⃣ Delete Auth account
+      if (user) {
+        await deleteUser(user);
+        showAlert("Account and data deleted permanently! Bye-bye. 👋", "success");
+        onClose(); // Close sidebar
+      } else {
+        showAlert("No authenticated user found to delete.", "error");
+      }
+    } catch (err) {
+      console.error("Error deleting user data:", err);
+      if (err.code === "auth/requires-recent-login") {
+        showAlert("For security, you must log in again before deleting your account.", "warning");
+      } else {
+        showAlert("Critical failure during account deletion. Some data might remain.", "error");
+      }
     }
-  } catch (err) {
-    console.error("Error deleting user:", err);
-    if (err.code === "auth/requires-recent-login") {
-      alert("You need to log in again before deleting your account.");
-    } else {
-      alert("Failed to delete account. Try again.");
-    }
-  }
-};
+  };
 
 
   // 🔹 Change password
@@ -137,12 +152,12 @@ const deleteUserAccount = async () => {
     if (!newPassword) return;
     try {
       await updatePassword(currentUser, newPassword);
-      alert("Password updated successfully!");
+      showAlert("Password updated successfully!", "success");
       setIsPasswordModalOpen(false);
       setNewPassword("");
     } catch (err) {
       console.error("Error updating password:", err);
-      alert("Failed to update password. You might need to re-login.");
+      showAlert("Failed to update password. You might need to re-login.", "error");
     }
   };
 
@@ -222,6 +237,22 @@ const deleteUserAccount = async () => {
             >
               Delete Account
             </button>
+            <div className="mt-8 border-t border-white/10 pt-6 space-y-3">
+               <h4 className="text-xs font-bold text-neutral-500 uppercase tracking-widest pl-2">Need Help?</h4>
+               <Link
+                to="/help"
+                className="w-full flex items-center gap-3 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm transition"
+               >
+                 <HelpCircle className="w-4 h-4 text-orange-500" /> Help Center
+               </Link>
+               <Link
+                to="/dashboard?tour=true"
+                onClick={onClose}
+                className="w-full flex items-center gap-3 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm transition"
+               >
+                 <Sparkles className="w-4 h-4 text-indigo-400" /> Start Guided Tour
+               </Link>
+            </div>
           </div>
         </div>
       </div>

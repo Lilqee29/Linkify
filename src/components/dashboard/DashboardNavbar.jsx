@@ -8,12 +8,14 @@ import UserSidebar from "./UserSidebar";
 import { Pencil, LogOut, HelpCircle } from "lucide-react";
 import { doc, onSnapshot } from "firebase/firestore"; // use onSnapshot for live updates
 import { db } from "../../firebase/firebase"; 
+import { useAlert } from "../../contexts/AlertContext";
 
 const DashboardNavbar = ({ onEditProfilePic }) => {
   const { currentUser } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [username, setUsername] = useState("User"); // state for username
   const navigate = useNavigate();
+  const { showAlert } = useAlert();
 
   // fetch username from Firestore when user logs in
 useEffect(() => {
@@ -57,7 +59,7 @@ useEffect(() => {
       await logOutUser(); 
       navigate("/login"); 
     } catch (err) {
-      alert("Logout failed: " + err.message);
+      showAlert("Logout failed: " + err.message, "error");
     }
   };
 

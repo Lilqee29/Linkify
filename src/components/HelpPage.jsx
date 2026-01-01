@@ -19,7 +19,8 @@ import {
   ExternalLink,
   CheckCircle,
   AlertCircle,
-  Info
+  Info,
+  Sparkles
 } from "lucide-react";
 
 const HelpPage = () => {
@@ -148,6 +149,24 @@ const HelpPage = () => {
                     </div>
                   </div>
                   
+                  <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-lg p-4">
+                    <div className="flex items-start">
+                      <Sparkles className="w-5 h-5 text-indigo-400 mr-2 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h4 className="font-semibold text-indigo-400 mb-2">Guided Tour</h4>
+                        <p className="text-indigo-300 text-sm mb-3">
+                          New to Linkly? Our interactive tour can walk you through the dashboard in 60 seconds.
+                        </p>
+                        <Link 
+                          to="/dashboard?tour=true" 
+                          className="inline-flex items-center text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 px-3 py-1.5 rounded-lg transition-colors"
+                        >
+                          Start Guided Tour
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
                     <div className="flex items-start">
                       <Info className="w-5 h-5 text-blue-400 mr-2 mt-0.5 flex-shrink-0" />
@@ -155,7 +174,7 @@ const HelpPage = () => {
                         <h4 className="font-semibold text-blue-400 mb-2">Important Note</h4>
                         <p className="text-blue-300 text-sm">
                           Email verification is required before you can access your dashboard. 
-                          Verification links expire after 2 minutes for security.
+                          Verification links expire after 15 minutes for security.
                         </p>
                       </div>
                     </div>
@@ -205,25 +224,29 @@ const HelpPage = () => {
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     <div className="space-y-4">
-                      <h3 className="text-base sm:text-lg font-semibold text-orange-400">Sharing & Analytics</h3>
-                      <ul className="space-y-2 text-gray-300 text-sm sm:text-base">
-                        <li>• Get a unique public profile URL</li>
-                        <li>• Share your profile link anywhere</li>
-                        <li>• Track profile visits and link clicks</li>
-                        <li>• View basic analytics in your dashboard</li>
-                        <li>• Mobile-responsive design</li>
-                        <li>• QR code generation for easy sharing</li>
+                      <h3 className="text-base sm:text-lg font-semibold text-orange-400">Anonymous Messaging (AMA)</h3>
+                      <p className="text-gray-300 text-sm">
+                        Engage with your audience like never before. Visitors can send you anonymous questions or feedback 
+                        directly from your public profile.
+                      </p>
+                      <ul className="space-y-2 text-gray-300 text-sm">
+                        <li>• "Ask Me Anything" section on your profile</li>
+                        <li>• No visitor account required to send messages</li>
+                        <li>• Manage and delete messages from your Inbox</li>
+                        <li>• Real-time notification dot for new messages</li>
                       </ul>
                     </div>
                     
                     <div className="space-y-4">
-                      <h3 className="text-base sm:text-lg font-semibold text-orange-400">Security & Privacy</h3>
-                      <ul className="space-y-2 text-gray-300 text-sm sm:text-base">
-                        <li>• Secure email verification</li>
-                        <li>• Password-protected accounts</li>
-                        <li>• Google Sign-In option</li>
-                        <li>• Private dashboard access</li>
-                        <li>• Data encryption</li>
+                      <h3 className="text-base sm:text-lg font-semibold text-orange-400">Advanced Analytics</h3>
+                      <p className="text-gray-300 text-sm">
+                        Track your growth with beautiful, interactive visualizations of your traffic.
+                      </p>
+                      <ul className="space-y-2 text-gray-300 text-sm">
+                        <li>• Total click tracking across all platforms</li>
+                        <li>• Top 3 ranking showing your best links</li>
+                        <li>• Performance progress bars for comparison</li>
+                        <li>• Individual click statistics for every link</li>
                       </ul>
                     </div>
                   </div>
@@ -458,8 +481,8 @@ const HelpPage = () => {
                     <div className="border-b border-white/10 pb-4">
                       <h3 className="font-semibold text-orange-400 mb-2">How long do verification links last?</h3>
                       <p className="text-gray-300 text-sm">
-                        Email verification links expire after 2 minutes for security. If your link expires, 
-                        you can request a new one from the login page.
+                        Email verification links expire after 15 minutes for security. If your link expires, 
+                        you can request a new one from the login page by clicking "Resend Verification".
                       </p>
                     </div>
                     

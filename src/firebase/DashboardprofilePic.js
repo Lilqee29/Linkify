@@ -2,10 +2,12 @@ import { useState } from "react";
 import { updateProfile } from "firebase/auth";
 import { auth, db } from "./firebase"; // adjust path if needed
 import { doc, setDoc } from "firebase/firestore";
+import { useAlert } from "../contexts/AlertContext";
 
 export const useDashboardProfilePic = () => {
   const [profilePic, setProfilePic] = useState(auth.currentUser?.photoURL || "");
   const [profileFile, setProfileFile] = useState(null);
+  const { showAlert } = useAlert();
 
   const handleSaveProfilePic = async () => {
     if (!profileFile) return;
@@ -27,7 +29,6 @@ export const useDashboardProfilePic = () => {
       }
       
       const url = data.data.url; // the direct link
-      console.log("Upload success, new URL:", url);
 
       // Update state
       setProfilePic(url);
@@ -45,11 +46,11 @@ export const useDashboardProfilePic = () => {
       const userRef = doc(db, "users", auth.currentUser.uid);
       await setDoc(userRef, { photoURL: url }, { merge: true });
 
-      alert("Profile picture updated ✅");
+      showAlert("Profile picture updated ✅", "success");
       setProfileFile(null); // Reset file input
     } catch (err) {
       console.error("Error updating profile pic:", err);
-      alert(`Failed to update profile picture: ${err.message}`);
+      showAlert(`Failed to update profile picture: ${err.message}`, "error");
     }
   };
 
