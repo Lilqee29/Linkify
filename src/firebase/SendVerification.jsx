@@ -10,10 +10,10 @@ export const sendVerification = async (user) => {
       url: `${baseUrl}/verify-email?t=${Date.now()}`, 
       handleCodeInApp: true, 
       iOS: {
-        bundleId: import.meta.env.VITE_APP_BUNDLE_ID
+        bundleId: import.meta.env.VITE_APP_BUNDLE_ID || "com.linkly.app"
       },
       android: {
-        packageName: import.meta.env.VITE_APP_PACKAGE_NAME,
+        packageName: import.meta.env.VITE_APP_PACKAGE_NAME || "com.linkly.app",
         installApp: true,
         minimumVersion: '12'
       }
