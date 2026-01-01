@@ -84,12 +84,13 @@ const UserSidebar = ({ isOpen, onClose }) => {
     if (!currentUser) return;
     const userRef = doc(db, "users", currentUser.uid);
     const now = Date.now();
-    const expiresAt = now + 5 * 60 * 1000; // currently 10s for test;  30*60*1000 for 30 mins
+    const expiresAt = now + 5 * 60 * 1000; // currently 10s for test;  5*60*1000 for 5 mins
+    //  mins
 
     await setDoc(
       userRef,
       { deleteRequest: { requestedAt: now, expiresAt } },
-      { merge: true }
+      { merge: true }  
     );
     setTimeLeft(expiresAt - now);
     showAlert("Account deletion scheduled! You have 5 minutes to cancel.", "warning");
