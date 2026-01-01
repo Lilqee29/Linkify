@@ -92,7 +92,7 @@ const UserSidebar = ({ isOpen, onClose }) => {
       { merge: true }
     );
     setTimeLeft(expiresAt - now);
-    showAlert("Account deletion scheduled! You have 30 minutes to cancel.", "warning");
+    showAlert("Account deletion scheduled! You have 5 minutes to cancel.", "warning");
   };
 
   // Cancel deletion
