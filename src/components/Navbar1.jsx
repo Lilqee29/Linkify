@@ -9,8 +9,7 @@ const Navbar = () => {
       <div className="container px-4 mx-auto relative text-sm">
         <div className="flex justify-center items-center">
           <div className="flex items-center flex-shrink-0">
-            <img className="h-10 w-10 mr-2" src={logo} alt="Logo" />
-            <span className="text-xl tracking-tight">Linkly</span>
+            <img className="h-14 w-14 mr-2 object-contain" src={logo} alt="Logo" />
           </div>
           <ul className="hidden lg:flex ml-14 space-x-12">
              {navItems.map((item, index) => (

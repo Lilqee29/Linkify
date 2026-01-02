@@ -70,8 +70,7 @@ useEffect(() => {
         {/* Logo / Name */}
         <div className="flex items-center flex-shrink-0">
           <Link to="/#" className="flex items-center">
-            <img className="h-8 w-8 sm:h-10 sm:w-10 mr-2" src={logo} alt="Logo" />
-            <span className="text-lg sm:text-xl tracking-tight text-white font-bold">Linkly</span>
+            <img className="h-16 w-16 sm:h-20 sm:w-20 mr-3 object-contain" src={logo} alt="Logo" />
           </Link>
         </div>
 
