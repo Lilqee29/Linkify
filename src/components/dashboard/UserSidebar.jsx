@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/authContext";
-import { X, HelpCircle, Sparkles } from "lucide-react";
+import { X, HelpCircle, Sparkles, Trash } from "lucide-react";
 import { Link } from "react-router-dom";
 import { doc, setDoc, getDoc, deleteDoc, collection, getDocs } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
-import { deleteUser, updatePassword, getAuth } from "firebase/auth"; // 🔹 for auth actions
+import { deleteUser, updatePassword, getAuth, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth"; // 🔹 for auth actions
 import { useAlert } from "../../contexts/AlertContext";
+import { useNavigate } from "react-router-dom"; 
 
 
 
@@ -20,10 +21,15 @@ const UserSidebar = ({ isOpen, onClose }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newUsername, setNewUsername] = useState("");
   const [timeLeft, setTimeLeft] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const navigate = useNavigate();
 
-  // 🔹 password change modal
+  // 🔹 password change and deletion confirmation modals
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [newPassword, setNewPassword] = useState("");
+  const [isConfirmDeleteModalOpen, setIsConfirmDeleteModalOpen] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [deleteError, setDeleteError] = useState("");
 
   // Fetch username and deletion request from Firestore
   useEffect(() => {
@@ -38,8 +44,13 @@ const UserSidebar = ({ isOpen, onClose }) => {
         // Check for deletion request
         if (data.deleteRequest) {
           const left = data.deleteRequest.expiresAt - Date.now();
-          if (left > 0) setTimeLeft(left);
-          else await deleteUserAccount();
+          if (left > 0) {
+            setTimeLeft(left);
+          } else {
+            // Timer expired while user was away - show the confirmation modal immediately
+            setTimeLeft(0);
+            setIsConfirmDeleteModalOpen(true);
+          }
         }
       }
     };
@@ -52,17 +63,37 @@ const UserSidebar = ({ isOpen, onClose }) => {
 
     const interval = setInterval(() => {
       setTimeLeft((prev) => {
-        if (prev <= 1000) {
+        const next = prev - 1000;
+        if (next <= 0) {
           clearInterval(interval);
-          deleteUserAccount(); // Delete after countdown
           return 0;
         }
-        return prev - 1000;
+        return next;
       });
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [timeLeft]);
+  }, [timeLeft > 0]);
+
+  // Trigger deletion modal when timer hits 0
+  useEffect(() => {
+    // Only trigger if we actually had a countdown running or we know there's a request
+    if (timeLeft === 0 && !isDeleting && !isConfirmDeleteModalOpen) {
+       const checkStatus = async () => {
+          if (!currentUser) return;
+          const userRef = doc(db, "users", currentUser.uid);
+          const snap = await getDoc(userRef);
+          if (snap.exists() && snap.data().deleteRequest) {
+             const left = snap.data().deleteRequest.expiresAt - Date.now();
+             if (left <= 0) {
+                console.log("⏰ Timer finished, opening confirmation...");
+                setIsConfirmDeleteModalOpen(true);
+             }
+          }
+       };
+       checkStatus();
+    }
+  }, [timeLeft, currentUser]); 
 
   // Update username
   const handleSaveUsername = async () => {
@@ -84,7 +115,7 @@ const UserSidebar = ({ isOpen, onClose }) => {
     if (!currentUser) return;
     const userRef = doc(db, "users", currentUser.uid);
     const now = Date.now();
-    const expiresAt = now + 5 * 60 * 1000; // currently 10s for test;  5*60*1000 for 5 mins
+    const expiresAt = now + 10 * 1000; // currently 10s for test;  5*60*1000 for 5 mins
     //  mins
 
     await setDoc(
@@ -93,7 +124,7 @@ const UserSidebar = ({ isOpen, onClose }) => {
       { merge: true }  
     );
     setTimeLeft(expiresAt - now);
-    showAlert("Account deletion scheduled! You have 5 minutes to cancel.", "warning");
+    showAlert("Account deletion scheduled! You have 10 seconds to cancel.", "warning");
   };
 
   // Cancel deletion
@@ -107,43 +138,69 @@ const UserSidebar = ({ isOpen, onClose }) => {
 
   // 🔹 Delete user permanently (Firestore + Auth)
   const deleteUserAccount = async () => {
-    if (!currentUser) return;
+    if (!currentUser || isDeleting) return;
+    setIsDeleting(true);
+    setDeleteError("");
 
     const authInstance = getAuth();
     const user = authInstance.currentUser;
 
+    if (!user) {
+      showAlert("You must be logged in to delete your account.", "error");
+      setIsDeleting(false);
+      return;
+    }
+
     try {
-      // 1️⃣ Delete Links Subcollection
+      // 1️⃣ RE-AUTHENTICATE FIRST
+      // This is the most likely step to fail. If it fails, we haven't touched any data yet.
+      if (currentUser?.providerData[0]?.providerId === "password") {
+        if (!confirmPassword) {
+           setDeleteError("Please enter your password to confirm.");
+           setIsDeleting(false);
+           return;
+        }
+        const credential = EmailAuthProvider.credential(user.email, confirmPassword);
+        console.log("🔐 Re-authenticating...");
+        await reauthenticateWithCredential(user, credential);
+      }
+
+      console.log("🗑️ Session verified. Wiping everything...");
+      
+      // 2️⃣ Delete Firestore Data (Subcollections first)
       const linksRef = collection(db, "users", currentUser.uid, "links");
       const linksSnap = await getDocs(linksRef);
-      const linkDeletions = linksSnap.docs.map(doc => deleteDoc(doc.ref));
-      await Promise.all(linkDeletions);
+      await Promise.all(linksSnap.docs.map(doc => deleteDoc(doc.ref)));
 
-      // 2️⃣ Delete Messages Subcollection
       const messagesRef = collection(db, "users", currentUser.uid, "messages");
       const messagesSnap = await getDocs(messagesRef);
-      const messageDeletions = messagesSnap.docs.map(doc => deleteDoc(doc.ref));
-      await Promise.all(messageDeletions);
+      await Promise.all(messagesSnap.docs.map(doc => deleteDoc(doc.ref)));
 
       // 3️⃣ Delete Main User Document
       const userRef = doc(db, "users", currentUser.uid);
       await deleteDoc(userRef);
 
-      // 4️⃣ Delete Auth account
-      if (user) {
-        await deleteUser(user);
-        showAlert("Account and data deleted permanently! Bye-bye. 👋", "success");
-        onClose(); // Close sidebar
-      } else {
-        showAlert("No authenticated user found to delete.", "error");
-      }
+      // 4️⃣ Delete Auth account - This should work now since we just re-authenticated
+      await deleteUser(user);
+      
+      console.log("✅ ACCOUNT FULLY DELETED.");
+      showAlert("Your account has been deleted. Goodbye! 👋", "success");
+      
+      onClose();
+      navigate("/login"); 
     } catch (err) {
-      console.error("Error deleting user data:", err);
+      console.error("❌ Deletion failure:", err);
       if (err.code === "auth/requires-recent-login") {
-        showAlert("For security, you must log in again before deleting your account.", "warning");
+        setDeleteError("Security timeout. Please log out, log back in, and try deleting again immediately.");
+      } else if (err.code === "auth/wrong-password") {
+        setDeleteError("Incorrect password. Please try again.");
+      } else if (err.code === "auth/network-request-failed") {
+        setDeleteError("Network error. Please check your connection.");
       } else {
-        showAlert("Critical failure during account deletion. Some data might remain.", "error");
+        setDeleteError("Error: " + (err.message || "Could not delete account."));
       }
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -302,21 +359,84 @@ const UserSidebar = ({ isOpen, onClose }) => {
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="Enter new password"
-              className="w-full p-3 border border-blue-500 rounded bg-black text-white placeholder-gray-400 mb-4"
+              className="w-full p-3 border border-blue-500 rounded bg-black text-white placeholder-gray-400 mb-4 outline-none focus:ring-2 focus:ring-blue-500"
             />
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setIsPasswordModalOpen(false)}
-                className="px-4 py-2 rounded bg-gray-700 hover:bg-gray-800 text-white"
+                className="px-4 py-2 rounded bg-gray-700 hover:bg-gray-800 text-white transition"
               >
                 Cancel
               </button>
               <button
                 onClick={handlePasswordChange}
-                className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white"
+                className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white transition font-bold"
               >
                 Save
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FINAL DELETE CONFIRMATION MODAL */}
+      {isConfirmDeleteModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[70] p-4">
+          <div className="bg-neutral-900 p-8 rounded-[2rem] w-full max-w-md border border-red-500/30 shadow-2xl relative">
+            <div className="text-center space-y-4">
+               <div className="w-16 h-16 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center mx-auto">
+                  <Trash size={32} />
+               </div>
+               <h2 className="text-2xl font-black text-white">Final Goodbye?</h2>
+               <p className="text-neutral-400 text-sm">
+                 To permanently delete your account and all associated data, please verify your identity.
+               </p>
+               
+               <div className="mt-6 space-y-4">
+                  {currentUser?.providerData[0]?.providerId === "password" ? (
+                    <div className="text-left space-y-1">
+                      <label className="text-[10px] uppercase font-black text-neutral-500 tracking-widest ml-1">Current Password</label>
+                      <input
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Confirm your password"
+                        className="w-full p-4 rounded-2xl bg-black border border-white/5 text-white outline-none focus:border-red-500/50 transition-all font-mono"
+                      />
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl text-blue-400 text-xs text-center">
+                       You signed in with <strong>Google</strong>. If deletion fails, please try logging out and back in first.
+                    </div>
+                  )}
+
+                  {deleteError && (
+                    <div className="p-3 bg-red-500/20 border border-red-500/40 rounded-xl text-red-500 text-xs font-bold animate-shake">
+                       {deleteError}
+                    </div>
+                  )}
+
+                  <div className="flex flex-col gap-3 pt-4">
+                    <button
+                      onClick={deleteUserAccount}
+                      disabled={isDeleting || (currentUser?.providerData[0]?.providerId === "password" && !confirmPassword)}
+                      className="w-full py-4 bg-red-600 hover:bg-red-500 text-white font-black rounded-2xl transition disabled:opacity-50 shadow-lg shadow-red-600/20 active:scale-95"
+                    >
+                      {isDeleting ? "Processing Wipe..." : "DELETE MY ACCOUNT"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsConfirmDeleteModalOpen(false);
+                        setConfirmPassword("");
+                        setDeleteError("");
+                        cancelDeletion(); // If they cancel here, let's stop the countdown logic too
+                      }}
+                      className="w-full py-3 text-neutral-500 hover:text-white font-bold transition"
+                    >
+                      Wait, I changed my mind
+                    </button>
+                  </div>
+               </div>
             </div>
           </div>
         </div>

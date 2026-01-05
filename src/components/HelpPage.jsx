@@ -207,6 +207,8 @@ const HelpPage = () => {
                         <li>• Drag and drop to reorder links</li>
                         <li>• Edit link titles and URLs anytime</li>
                         <li>• Delete links you no longer need</li>
+                        <li>• <strong className="text-indigo-400">Spotlight Links:</strong> Add sparkle animations & special styling to important links</li>
+                        <li>• <strong className="text-orange-400">Scheduled Visibility:</strong> Set links to appear or disappear at specific dates/times</li>
                       </ul>
                     </div>
                     
@@ -234,6 +236,7 @@ const HelpPage = () => {
                         <li>• No visitor account required to send messages</li>
                         <li>• Manage and delete messages from your Inbox</li>
                         <li>• Real-time notification dot for new messages</li>
+                        <li>• <strong className="text-pink-400">Toggle Control:</strong> Turn the feature on/off anytime from the Messages modal</li>
                       </ul>
                     </div>
                     

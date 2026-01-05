@@ -8,12 +8,13 @@ import {
   Palette, 
   Share, 
   Sparkles,
-  CheckCircle2
+  CheckCircle2,
+  MessageSquare
 } from 'lucide-react';
 
 const Onboarding = ({ isOpen, onClose }) => {
   const [step, setStep] = useState(1);
-  const totalSteps = 5;
+  const totalSteps = 6;
 
   useEffect(() => {
     if (isOpen) {
@@ -75,6 +76,12 @@ const Onboarding = ({ isOpen, onClose }) => {
       description: "Once you're happy, hit 'Share' to copy your unique URL or generate a QR code. Your profile is live and ready for the world!",
       icon: <Share className="w-12 h-12 text-blue-500" />,
       color: "from-blue-500/20 to-blue-600/20"
+    },
+    {
+      title: "Inbox & Anonymous Messages ✉️",
+      description: "Enable the AMA feature to let fans send you anonymous messages! Manage your incoming questions directly from your new 'Messages' tab.",
+      icon: <MessageSquare className="w-12 h-12 text-pink-500" />,
+      color: "from-pink-500/20 to-pink-600/20"
     }
   ];
 

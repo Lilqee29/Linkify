@@ -92,6 +92,7 @@ const PublicProfile = () => {
             username: username,
             links: userLinks || [],
             bio: userData.bio || "Welcome to my links page 🚀",
+            amaEnabled: userData.amaEnabled !== undefined ? userData.amaEnabled : true,
             profilePic: userData.photoURL || null,
             theme: userData.customTheme || {
               primaryColor: "#6366f1", // Indigo
@@ -254,6 +255,18 @@ const PublicProfile = () => {
 
       <div className="min-h-screen flex flex-col items-center pt-16 px-4 pb-20 transition-colors duration-500 overflow-x-hidden" style={{ background: theme.backgroundColor, fontFamily: theme.fontFamily, color: theme.textColor }}>
         
+        {/* Spotlight Styles */}
+        <style dangerouslySetInnerHTML={{ __html: `
+          @keyframes spotlight-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(${theme.primaryColor.replace('#', '').match(/.{2}/g).map(x => parseInt(x, 16)).join(',')}, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(${theme.primaryColor.replace('#', '').match(/.{2}/g).map(x => parseInt(x, 16)).join(',')}, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(${theme.primaryColor.replace('#', '').match(/.{2}/g).map(x => parseInt(x, 16)).join(',')}, 0); }
+          }
+          .spotlight-link {
+            animation: spotlight-pulse 2s infinite;
+          }
+        `}} />
+        
         {/* Share Button (Keep this, as it's useful on the live page) */}
         <button
           onClick={handleShare}
@@ -295,32 +308,34 @@ const PublicProfile = () => {
             </div>
 
              {/* AMA / Message Box */}
-             <div className="w-full max-w-sm mb-8">
-                <form onSubmit={handleSendMessage} className="relative">
-                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none opacity-50">
-                    <MessageSquare className="w-4 h-4" style={{ color: theme.textColor }} />
-                  </div>
-                  <input
-                    type="text"
-                    value={messageText}
-                    onChange={(e) => setMessageText(e.target.value)}
-                    placeholder={messageSent ? "Message sent! Send another?" : "Ask me anything..."}
-                    className="w-full pl-10 pr-12 py-3 rounded-2xl border-none outline-none shadow-lg focus:shadow-xl transition-shadow bg-white/10 backdrop-blur-md placeholder:text-current/50"
-                    style={{ 
-                      color: theme.textColor,
-                      background: theme.backgroundColor === '#ffffff' ? '#f3f4f6' : 'rgba(255,255,255,0.1)'
-                    }}
-                  />
-                  <button
-                    type="submit"
-                    disabled={!messageText.trim() || sendingMessage}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-transform active:scale-95 hover:bg-white/10"
-                    style={{ color: theme.primaryColor }}
-                  >
-                    {sendingMessage ? <span className="animate-spin block w-4 h-4 border-2 border-current border-t-transparent rounded-full"/> : <Send className="w-4 h-4" />}
-                  </button>
-                </form>
-             </div>
+             {profileData?.amaEnabled !== false && (
+              <div className="w-full max-w-sm mb-8">
+                 <form onSubmit={handleSendMessage} className="relative">
+                   <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none opacity-50">
+                     <MessageSquare className="w-4 h-4" style={{ color: theme.textColor }} />
+                   </div>
+                   <input
+                     type="text"
+                     value={messageText}
+                     onChange={(e) => setMessageText(e.target.value)}
+                     placeholder={messageSent ? "Message sent! Send another?" : "Ask me anything..."}
+                     className="w-full pl-10 pr-12 py-3 rounded-2xl border-none outline-none shadow-lg focus:shadow-xl transition-shadow bg-white/10 backdrop-blur-md placeholder:text-current/50"
+                     style={{ 
+                       color: theme.textColor,
+                       background: theme.backgroundColor === '#ffffff' ? '#f3f4f6' : 'rgba(255,255,255,0.1)'
+                     }}
+                   />
+                   <button
+                     type="submit"
+                     disabled={!messageText.trim() || sendingMessage}
+                     className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-transform active:scale-95 hover:bg-white/10"
+                     style={{ color: theme.primaryColor }}
+                   >
+                     {sendingMessage ? <span className="animate-spin block w-4 h-4 border-2 border-current border-t-transparent rounded-full"/> : <Send className="w-4 h-4" />}
+                   </button>
+                 </form>
+              </div>
+             )}
 
             {/* Links List */}
             <div className="w-full flex flex-col gap-4 z-10">
@@ -336,23 +351,41 @@ const PublicProfile = () => {
                 // However, the dashboard preview loop was `links.map`, implying flat list.
                 // I will render a flat list of links to match the preview exactly.
                 
-                localLinks.map((link) => {
-                   const Icon = iconMap[link.iconType] || LinkIcon;
+                localLinks.filter(link => {
+                   if (link.isActive === false) return false;
+                   const now = new Date();
+                   if (link.scheduledStart && new Date(link.scheduledStart) > now) return false;
+                   if (link.scheduledEnd && new Date(link.scheduledEnd) < now) return false;
+                   return true;
+                }).map((link) => {
+                   const isNew = link.createdAt && (new Date() - (link.createdAt.toDate ? link.createdAt.toDate() : new Date(link.createdAt))) < 48 * 60 * 60 * 1000;
+                   const isTrending = topLink && link.clicks >= topLink.clicks && topLink.clicks > 0;
+                   
                    return (
                      <div
                       key={link.id}
                       onClick={() => handleLinkClick(link.id, link.url)}
-                      className="relative flex items-center justify-between px-5 py-4 rounded-xl shadow-sm transition-transform w-full text-left font-medium cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                      className={`relative flex items-center justify-between px-5 py-4 rounded-xl shadow-sm transition-all w-full text-left font-medium cursor-pointer hover:scale-[1.02] active:scale-[0.98] ${link.isFeatured ? 'spotlight-link scale-[1.02] z-10' : ''}`}
                       style={{
                         backgroundColor: theme.primaryColor,
-                        color: theme.backgroundColor === "#ffffff" ? "#000000" : "#ffffff", // Dynamic contrast 
-                        opacity: 0.95
+                        color: theme.backgroundColor === "#ffffff" ? "#000000" : "#ffffff",
+                        opacity: 0.95,
+                        border: link.isFeatured ? `2px solid ${theme.secondaryColor}` : 'none'
                       }}
                     >
                       <span className="flex items-center gap-4 min-w-0">
-                        <Icon className="w-5 h-5 shrink-0" />
+                        {link.iconType === "custom" ? (
+                          <img src={link.iconUrl} alt="" className="w-5 h-5 rounded-full object-cover shrink-0" />
+                        ) : (
+                          (() => {
+                            const Icon = iconMap[link.iconType] || LinkIcon;
+                            return <Icon className="w-5 h-5 shrink-0" />;
+                          })()
+                        )}
                         <span className="truncate">{link.title}</span>
+                        {isNew && <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider">New</span>}
                       </span>
+                      {isTrending && <span className="flex items-center gap-1 text-[10px] font-bold uppercase py-1 px-2 bg-black/20 rounded-lg">🔥 HOT</span>}
                     </div>
                    );
                  })

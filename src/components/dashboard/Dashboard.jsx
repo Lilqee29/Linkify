@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/authContext";
-import { PlusCircle, Eye, Edit2, Trash2, X, User, Image as ImageIcon, Palette, Pi, Share, MessageSquare, Trash, BarChart3 } from "lucide-react";
+import { PlusCircle, Eye, Edit2, Trash2, X, User, Image as ImageIcon, Palette, Pi, Share, MessageSquare, Trash, BarChart3, Sparkles, Zap, Clock, Calendar, Send } from "lucide-react";
 import DashboardNavbar from "./DashboardNavbar";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useDashboardLinks } from "../../firebase/Dashboardlink";
@@ -27,13 +27,12 @@ const iconMap = {
   github: Github,
   default: LinkIcon,
   discord: FaDiscord,
-  Pinterest: FaPinterest,
+  pinterest: FaPinterest,
   tiktok: FaTiktok,
   snapchat: FaSnapchat,
   reddit: FaReddit,
   whatsapp: FaWhatsapp,
   telegram: FaTelegram,
-
 };
 
 const Dashboard = () => {
@@ -93,12 +92,100 @@ const Dashboard = () => {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editLink, setEditLink] = useState(null);
-  const [formData, setFormData] = useState({ title: "", url: "", iconType: "default", category: categories[0] });
+  const [formData, setFormData] = useState({ 
+    title: "", 
+    url: "", 
+    iconType: "default", 
+    iconUrl: "", 
+    category: categories[0],
+    isFeatured: false,
+    isActive: true,
+    scheduledStart: "",
+    scheduledEnd: ""
+  });
+
+  const [isFetchingMetadata, setIsFetchingMetadata] = useState(false);
+
+  // Auto-detect icon and fetch metadata
+  useEffect(() => {
+    if (!formData.url || editLink) return;
+    
+    // Icon Detection logic remains...
+    const url = formData.url.toLowerCase();
+    let detectedIcon = "default";
+    
+    if (url.includes("instagram.com")) detectedIcon = "instagram";
+    else if (url.includes("youtube.com") || url.includes("youtu.be")) detectedIcon = "youtube";
+    else if (url.includes("twitter.com") || url.includes("x.com")) detectedIcon = "twitter";
+    else if (url.includes("facebook.com") || url.includes("fb.com")) detectedIcon = "facebook";
+    else if (url.includes("github.com")) detectedIcon = "github";
+    else if (url.includes("discord.gg") || url.includes("discord.com")) detectedIcon = "discord";
+    else if (url.includes("pinterest.com")) detectedIcon = "pinterest";
+    else if (url.includes("tiktok.com")) detectedIcon = "tiktok";
+    else if (url.includes("snapchat.com")) detectedIcon = "snapchat";
+    else if (url.includes("reddit.com")) detectedIcon = "reddit";
+    else if (url.includes("whatsapp.com") || url.includes("wa.me")) detectedIcon = "whatsapp";
+    else if (url.includes("t.me") || url.includes("telegram.org")) detectedIcon = "telegram";
+    
+    if (detectedIcon !== "default" && formData.iconType === "default") {
+      setFormData(prev => ({ ...prev, iconType: detectedIcon }));
+    }
+  }, [formData.url, editLink]);
+
+  const handleFetchMetadata = async () => {
+    if (!formData.url) return;
+    setIsFetchingMetadata(true);
+    
+    let url = formData.url;
+    if (!url.startsWith('http')) url = 'https://' + url;
+    
+    try {
+      // Use Microlink for rich metadata
+      const res = await fetch(`https://api.microlink.io?url=${encodeURIComponent(url)}`);
+      const data = await res.json();
+      
+      if (data.status === 'success' && data.data) {
+        const { title, logo, image } = data.data;
+        const iconUrl = logo?.url || image?.url || `https://unavatar.io/${new URL(url).hostname}?fallback=https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=128`;
+        
+        setFormData(prev => ({ 
+          ...prev, 
+          title: prev.title || title || "", 
+          iconUrl: iconUrl,
+          iconType: (logo || image) ? "custom" : prev.iconType
+        }));
+        showAlert("Link metadata optimized! ✨", "success");
+      } else {
+        handleFetchMagicIcon(); // fallback to basic icon scrape
+      }
+    } catch (e) {
+      handleFetchMagicIcon();
+    } finally {
+      setIsFetchingMetadata(false);
+    }
+  };
+
+  const handleFetchMagicIcon = () => {
+    if (!formData.url) return;
+    
+    let url = formData.url;
+    if (!url.startsWith('http')) url = 'https://' + url;
+    
+    try {
+      const hostname = new URL(url).hostname;
+      // Try to get avatar or favicon
+      const magicUrl = `https://unavatar.io/${hostname}?fallback=https://www.google.com/s2/favicons?domain=${hostname}&sz=128`;
+      setFormData(prev => ({ ...prev, iconType: "custom", iconUrl: magicUrl }));
+      showAlert("Magic icon applied! ✨", "success");
+    } catch (e) {
+      showAlert("Invalid URL for magic icon", "error");
+    }
+  };
 
   const [bioModalOpen, setBioModalOpen] = useState(false);
   const [profilePicModalOpen, setProfilePicModalOpen] = useState(false);
 
-  const { bio, handleSaveBio, loading: bioLoading } = useDashboardProfile(); // Removed setBio from here to avoid confusion
+  const { bio, amaEnabled, handleSaveProfile, loading: bioLoading } = useDashboardProfile(); 
   const [tempBio, setTempBio] = useState(bio); // Local state for editing
 
   // Update tempBio when bio loads from db
@@ -173,7 +260,6 @@ const saveProfilePic = async () => {
   const topLinks = [...links].sort((a, b) => (b.clicks || 0) - (a.clicks || 0)).slice(0, 3);
   const maxClicks = Math.max(...links.map(l => l.clicks || 0), 1);
   // // Example of improved default and preset themes for clarity and text emphasis:
-// Helper function to calculate best text color
   function getContrastColor(bgColor) {
     if (!bgColor) return "#111111";
     const color = bgColor.replace("#", "");
@@ -183,6 +269,14 @@ const saveProfilePic = async () => {
     const luminance = (0.299*r + 0.587*g + 0.114*b)/255;
     return luminance > 0.6 ? "#111111" : "#ffffff";
   }
+
+  const isLinkVisible = (link) => {
+    if (link.isActive === false) return false;
+    const now = new Date();
+    if (link.scheduledStart && new Date(link.scheduledStart) > now) return false;
+    if (link.scheduledEnd && new Date(link.scheduledEnd) < now) return false;
+    return true;
+  };
 
   // const predefinedThemes = {
   //   classic: {
@@ -245,13 +339,33 @@ const saveProfilePic = async () => {
   // ------------------- Link Handlers -------------------
   const handleAddLink = () => {
     setEditLink(null);
-    setFormData({ title: "", url: "", iconType: "default", category: categories[0] });
+    setFormData({ 
+      title: "", 
+      url: "", 
+      iconType: "default", 
+      iconUrl: "", 
+      category: categories[0],
+      isFeatured: false,
+      isActive: true,
+      scheduledStart: "",
+      scheduledEnd: ""
+    });
     setModalOpen(true);
   };
 
   const handleEditLink = (link) => {
     setEditLink(link);
-    setFormData({ title: link.title, url: link.url, iconType: link.iconType || "default", category: link.category || categories[0] });
+    setFormData({ 
+      title: link.title, 
+      url: link.url, 
+      iconType: link.iconType || "default", 
+      iconUrl: link.iconUrl || "",
+      category: link.category || categories[0],
+      isFeatured: link.isFeatured || false,
+      isActive: link.isActive !== undefined ? link.isActive : true,
+      scheduledStart: link.scheduledStart || "",
+      scheduledEnd: link.scheduledEnd || ""
+    });
     setModalOpen(true);
   };
 
@@ -472,8 +586,11 @@ useEffect(() => {
                >
                   <MessageSquare className="w-5 h-5" />
                   <span className="text-xs">Messages</span>
+                  <span className={`text-[9px] uppercase font-bold px-1.5 rounded-full ${amaEnabled ? 'bg-orange-500/20 text-orange-400' : 'bg-neutral-900/50 text-neutral-500'}`}>
+                    {amaEnabled ? 'Active' : 'Hidden'}
+                  </span>
                   {messages.length > 0 && (
-                    <span className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full border-2 border-neutral-900"></span>
+                    <span className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full border-2 border-neutral-900 shadow-lg"></span>
                   )}
                </button>
 
@@ -527,15 +644,31 @@ useEffect(() => {
                             key={link.id}
                             className="group flex items-center justify-between p-4 rounded-2xl bg-neutral-800/40 border border-white/5 hover:border-indigo-500/30 hover:bg-neutral-800 transition-all cursor-move"
                           >
-                            <div className="flex items-center gap-4 overflow-hidden">
-                              <div className="p-3 bg-neutral-900 rounded-xl text-neutral-400 group-hover:text-white transition-colors">
-                                 <Icon className="w-5 h-5" />
-                              </div>
-                              <div className="flex flex-col min-w-0">
-                                 <h4 className="font-bold truncate group-hover:text-indigo-400 transition-colors">{link.title}</h4>
-                                 <a href={link.url} target="_blank" rel="noreferrer" className="text-xs text-neutral-500 truncate hover:underline">{link.url}</a>
-                              </div>
-                            </div>
+                             <div className="flex items-center gap-4 overflow-hidden">
+                               <div className="relative">
+                                 <div className="p-3 bg-neutral-900 rounded-xl text-neutral-400 group-hover:text-white transition-colors overflow-hidden">
+                                    {link.iconType === "custom" ? (
+                                      <img src={link.iconUrl} alt="" className="w-5 h-5 rounded-full object-cover" />
+                                    ) : (
+                                      (() => {
+                                        const Icon = iconMap[link.iconType] || LinkIcon;
+                                        return <Icon className="w-5 h-5" />;
+                                      })()
+                                    )}
+                                 </div>
+                                 {link.isFeatured && (
+                                   <div className="absolute -top-1 -right-1 w-3 h-3 bg-indigo-500 rounded-full border-2 border-neutral-800 animate-pulse"></div>
+                                 )}
+                               </div>
+                               <div className="flex flex-col min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <h4 className="font-bold truncate group-hover:text-indigo-400 transition-colors">{link.title}</h4>
+                                    {link.isFeatured && <Zap className="w-3 h-3 text-indigo-400 fill-current" />}
+                                    {(link.scheduledStart || link.scheduledEnd) && <Clock className="w-3 h-3 text-neutral-500" />}
+                                  </div>
+                                  <a href={link.url} target="_blank" rel="noreferrer" className="text-xs text-neutral-500 truncate hover:underline">{link.url}</a>
+                               </div>
+                             </div>
                             
                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity translate-x-4 group-hover:translate-x-0">
                                <button 
@@ -614,26 +747,55 @@ useEffect(() => {
                         </p>
                       </div>
 
-                      <div className="w-full flex flex-col gap-3 z-10 pb-10">
-                        {links.length === 0 ? (
-                           <div className="w-full py-4 text-center opacity-50 border border-dashed border-current rounded-xl">No links</div>
+                      {/* Preview AMA */}
+                      {amaEnabled && (
+                        <div className="w-full max-w-sm mb-8 z-10">
+                          <div className="relative">
+                            <div 
+                              className="w-full pl-10 pr-12 py-3 rounded-2xl border-none shadow-lg bg-white/10 backdrop-blur-md text-xs opacity-60"
+                              style={{ color: safeCustomTheme.textColor }}
+                            >
+                              Ask me anything...
+                            </div>
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                               <MessageSquare className="w-4 h-4" />
+                            </div>
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                               <Send className="w-4 h-4 cursor-default" />
+                            </div>
+                          </div>
+                   </div>
+                   )}
+
+
+
+                       <div className="w-full flex flex-col gap-3 z-10 pb-10">
+                        {links.filter(isLinkVisible).length === 0 ? (
+                           <div className="w-full py-4 text-center opacity-50 border border-dashed border-current rounded-xl">No active links</div>
                         ) : (
-                           links.map((link) => {
+                           links.filter(isLinkVisible).map((link) => {
                              const Icon = iconMap[link.iconType] || LinkIcon;
+                             const isTrending = link.clicks >= maxClicks && maxClicks > 0;
                              return (
                                <div
                                 key={link.id}
-                                className="relative flex items-center justify-between px-4 py-3.5 rounded-xl shadow-sm transition-transform w-full text-left font-medium"
+                                className={`relative flex items-center justify-between px-4 py-3.5 rounded-xl shadow-sm transition-all w-full text-left font-medium ${link.isFeatured ? 'animate-pulse scale-[1.02] ring-2 ring-white/20' : ''}`}
                                 style={{
                                   backgroundColor: safeCustomTheme.primaryColor,
-                                  color: safeCustomTheme.backgroundColor === "#ffffff" ? "#000000" : "#ffffff", // basic contrast logic since we can't fully calculate here easily without helper
-                                  opacity: 0.9
+                                  color: safeCustomTheme.backgroundColor === "#ffffff" ? "#000000" : "#ffffff",
+                                  opacity: 0.9,
+                                  border: link.isFeatured ? `2px solid ${safeCustomTheme.secondaryColor}` : 'none'
                                 }}
                               >
                                 <span className="flex items-center gap-3">
-                                  <Icon className="w-4 h-4" />
+                                  {link.iconType === "custom" ? (
+                                    <img src={link.iconUrl} alt="" className="w-4 h-4 rounded-full object-cover shrink-0" />
+                                  ) : (
+                                    <Icon className="w-4 h-4 shrink-0" />
+                                  )}
                                   <span className="truncate max-w-[150px]">{link.title}</span>
                                 </span>
+                                {isTrending && <Zap className="w-3 h-3 animate-bounce" />}
                               </div>
                              );
                            })
@@ -661,9 +823,21 @@ useEffect(() => {
             <button onClick={() => setMessagesModalOpen(false)} className="absolute top-4 right-4 text-neutral-400 hover:text-orange-500">
               <X />
             </button>
-            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <MessageSquare /> Inbox <span className="text-sm opacity-50 font-normal">({messages.length})</span>
-            </h2>
+            <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold flex items-center gap-2">
+                  <MessageSquare /> Inbox <span className="text-sm opacity-50 font-normal">({messages.length})</span>
+                </h2>
+                
+                <div className="flex items-center gap-2 bg-neutral-800 px-3 py-1.5 rounded-full border border-white/5">
+                   <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">AMA</span>
+                   <button 
+                     onClick={() => handleSaveProfile({ amaEnabled: !amaEnabled })}
+                     className={`w-8 h-4 rounded-full transition-colors relative ${amaEnabled ? 'bg-orange-500' : 'bg-neutral-600'}`}
+                   >
+                      <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${amaEnabled ? 'left-4.5' : 'left-0.5'}`} style={{ left: amaEnabled ? '1.125rem' : '0.125rem' }}></div>
+                   </button>
+                </div>
+            </div>
             
             <div className="space-y-4">
               {messagesLoading ? (
@@ -791,13 +965,15 @@ useEffect(() => {
               rows={5}
               placeholder="Tell the world about yourself..."
             />
+            {/* Removed toggle from here as it's now in the Inbox modal */}
+
             <button
                onClick={async () => {
-                await handleSaveBio(tempBio); // save to Firestore
+                await handleSaveProfile({ bio: tempBio }); // save to Firestore
                 setBioModalOpen(false); // close modal
               }} 
               disabled={bioLoading}
-              className={`mt-4 w-full font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 ${
+              className={`w-full font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 ${
                   bioLoading ? "bg-gray-600 cursor-not-allowed" : "bg-orange-500 text-black hover:bg-orange-600"
               }`}
             >
@@ -905,33 +1081,99 @@ useEffect(() => {
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 className="w-full p-3 rounded-lg bg-neutral-800 text-white placeholder:text-neutral-400"
               />
-              <input
-                type="url"
-                placeholder="URL"
-                value={formData.url}
-                onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                className="w-full p-3 rounded-lg bg-neutral-800 text-white placeholder:text-neutral-400"
-              />
-              <select
-                value={formData.iconType}
-                onChange={(e) => setFormData({ ...formData, iconType: e.target.value })}
-                className="w-full p-3 rounded-lg bg-neutral-800 text-white"
-              >
-                <option value="default">Default</option>
-                <option value="instagram">Instagram</option>
-                <option value="youtube">YouTube</option>
-                <option value="twitter">Twitter</option>
-                <option value="facebook">Facebook</option>
-                <option value="discord">Discord</option>
-                <option value="pinterest">Pinterest</option>
-                <option value="github">Github</option>
-                <option value="tiktok">TikTok</option>
-                <option value="snapchat">Snapchat</option>
-                <option value="pinterest">Pinterest</option>
-                <option value="reddit">Reddit</option>
-                <option value="whatsapp">WhatsApp</option>
-                <option value="telegram">Telegram</option>
-              </select>
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  placeholder="URL"
+                  value={formData.url}
+                  onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                  className="flex-1 p-3 rounded-lg bg-neutral-800 text-white placeholder:text-neutral-400"
+                />
+                <button
+                  type="button"
+                  onClick={handleFetchMetadata}
+                  disabled={isFetchingMetadata}
+                  title="Optimize with AI"
+                  className="px-4 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition-colors flex items-center justify-center group disabled:opacity-50"
+                >
+                  <Sparkles className={`w-4 h-4 group-hover:scale-110 transition-transform ${isFetchingMetadata ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+
+              {/* Special Features Settings */}
+              <div className="bg-neutral-800/50 p-4 rounded-xl space-y-4 border border-white/5">
+                 <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                       <Zap className={`w-4 h-4 ${formData.isFeatured ? 'text-indigo-400' : 'text-neutral-500'}`} />
+                       <span className="text-sm font-semibold">Spotlight Link</span>
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={() => setFormData({ ...formData, isFeatured: !formData.isFeatured })}
+                      className={`w-10 h-5 rounded-full transition-colors relative ${formData.isFeatured ? 'bg-indigo-600' : 'bg-neutral-700'}`}
+                    >
+                       <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${formData.isFeatured ? 'left-6' : 'left-1'}`}></div>
+                    </button>
+                 </div>
+
+                 <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-neutral-400 mb-2">
+                       <Clock className="w-4 h-4" />
+                       <span className="text-xs font-bold uppercase tracking-wider">Scheduled Visibility</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                       <div className="space-y-1">
+                          <label className="text-[10px] uppercase text-neutral-500 font-bold ml-1">Start Date</label>
+                          <input 
+                            type="datetime-local" 
+                            value={formData.scheduledStart}
+                            onChange={(e) => setFormData({ ...formData, scheduledStart: e.target.value })}
+                            className="w-full p-2 text-xs rounded-lg bg-neutral-900 text-white border border-white/5"
+                          />
+                       </div>
+                       <div className="space-y-1">
+                          <label className="text-[10px] uppercase text-neutral-500 font-bold ml-1">End Date</label>
+                          <input 
+                            type="datetime-local" 
+                            value={formData.scheduledEnd}
+                            onChange={(e) => setFormData({ ...formData, scheduledEnd: e.target.value })}
+                            className="w-full p-2 text-xs rounded-lg bg-neutral-900 text-white border border-white/5"
+                          />
+                       </div>
+                    </div>
+                 </div>
+              </div>
+
+              {/* Visual Icon Selector */}
+              <div className="mt-2 text-xs font-bold uppercase tracking-widest text-neutral-500 mb-2">Select Icon</div>
+              <div className="grid grid-cols-7 gap-2 mb-4 bg-neutral-800 p-3 rounded-xl max-h-40 overflow-y-auto custom-scrollbar">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, iconType: "default", iconUrl: "" })}
+                  className={`p-2 rounded-lg flex items-center justify-center transition-all ${formData.iconType === "default" ? "bg-indigo-600 text-white" : "bg-neutral-900 text-neutral-400 hover:bg-neutral-700 hover:text-white"}`}
+                >
+                  <LinkIcon className="w-5 h-5" />
+                </button>
+                {Object.entries(iconMap).filter(([key]) => key !== 'default').map(([key, Icon]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, iconType: key, iconUrl: "" })}
+                    className={`p-2 rounded-lg flex items-center justify-center transition-all ${formData.iconType === key ? "bg-indigo-600 text-white" : "bg-neutral-900 text-neutral-400 hover:bg-neutral-700 hover:text-white"}`}
+                  >
+                    <Icon className="w-5 h-5" />
+                  </button>
+                ))}
+                {formData.iconUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, iconType: "custom" })}
+                    className={`p-2 rounded-lg flex items-center justify-center transition-all ${formData.iconType === "custom" ? "bg-indigo-600 text-white" : "bg-neutral-900 text-neutral-400 hover:bg-neutral-700 hover:text-white"}`}
+                  >
+                    <img src={formData.iconUrl} className="w-5 h-5 rounded-full object-cover" />
+                  </button>
+                )}
+              </div>
               {/* Category Select */}
               <select
                 value={formData.category}

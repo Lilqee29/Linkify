@@ -24,8 +24,8 @@ const iconMap = {
   facebook: Facebook,
   github:Github,
   default: LinkIcon,
-  iscord: FaDiscord,
-  Pinterest: FaPinterest,
+  discord: FaDiscord,
+  pinterest: FaPinterest,
   tiktok: FaTiktok,
   snapchat: FaSnapchat,
   reddit: FaReddit,
@@ -129,6 +129,17 @@ const UserProfile = () => {
     transition: "background 0.3s",
   }}
 >
+  {/* Spotlight Styles */}
+  <style dangerouslySetInnerHTML={{ __html: `
+    @keyframes spotlight-pulse {
+      0% { box-shadow: 0 0 0 0 rgba(${theme.primaryColor.replace('#', '').match(/.{2}/g).map(x => parseInt(x, 16)).join(',')}, 0.4); }
+      70% { box-shadow: 0 0 0 15px rgba(${theme.primaryColor.replace('#', '').match(/.{2}/g).map(x => parseInt(x, 16)).join(',')}, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(${theme.primaryColor.replace('#', '').match(/.{2}/g).map(x => parseInt(x, 16)).join(',')}, 0); }
+    }
+    .spotlight-link {
+      animation: spotlight-pulse 2s infinite;
+    }
+  `}} />
   {/* Share Button - Top Right Corner */}
 <button
   onClick={handleShare}
@@ -208,21 +219,25 @@ const UserProfile = () => {
 
       {/* Quick Links */}
       <div className="flex flex-wrap gap-2 sm:gap-3 justify-center mb-3">
-        {quickLinks.map((link) => {
-          const Icon = iconMap[link.iconType] || LinkIcon;
-          return (
-            <a
-              key={link.id}
-              href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2 sm:p-3 rounded-full shadow flex items-center justify-center transition hover:scale-105"
-              style={{ background: theme.secondaryColor, color: theme.backgroundColor }}
-            >
-              <Icon className="w-4 h-4 sm:w-6 sm:h-6" />
-            </a>
-          );
-        })}
+        {quickLinks.map((link) => (
+          <a
+            key={link.id}
+            href={link.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2 sm:p-3 rounded-full shadow flex items-center justify-center transition hover:scale-105 overflow-hidden"
+            style={{ background: theme.secondaryColor, color: theme.backgroundColor }}
+          >
+            {link.iconType === "custom" ? (
+              <img src={link.iconUrl} alt="" className="w-4 h-4 sm:w-6 sm:h-6 rounded-full object-cover shrink-0" />
+            ) : (
+              (() => {
+                const Icon = iconMap[link.iconType] || LinkIcon;
+                return <Icon className="w-4 h-4 sm:w-6 sm:h-6" />;
+              })()
+            )}
+          </a>
+        ))}
       </div>
 
       {/* Links Section */}
@@ -241,8 +256,16 @@ const UserProfile = () => {
                 {category}
               </h2>
               <div className="flex flex-col gap-1 sm:gap-2">
-                {groupedLinks[category].map((link) => {
-                  const Icon = iconMap[link.iconType] || LinkIcon;
+                {groupedLinks[category].filter(link => {
+                   if (link.isActive === false) return false;
+                   const now = new Date();
+                   if (link.scheduledStart && new Date(link.scheduledStart) > now) return false;
+                   if (link.scheduledEnd && new Date(link.scheduledEnd) < now) return false;
+                   return true;
+                }).map((link) => {
+                  const isNew = link.createdAt && (new Date() - (link.createdAt.toDate ? link.createdAt.toDate() : new Date(link.createdAt))) < 48 * 60 * 60 * 1000;
+                  const isTrending = topLink && link.clicks >= topLink.clicks && topLink.clicks > 0;
+                  
                   return (
                     <button
                       key={link.id}
@@ -251,24 +274,36 @@ const UserProfile = () => {
                         link.id === topLink?.id
                           ? "ring-2 ring-yellow-400 bg-yellow-100"
                           : ""
-                      }`}
+                      } ${link.isFeatured ? 'spotlight-link scale-[1.02] z-10' : ''}`}
                       style={{
                         background: link.id === topLink?.id ? "#fef08a" : theme.primaryColor,
                         color: link.id === topLink?.id ? "#92400e" : theme.backgroundColor,
                         fontFamily: theme.fontFamily,
                         textDecoration: "none",
+                        border: link.isFeatured ? `2px solid ${theme.secondaryColor}` : 'none'
                       }}
                     >
-                      <Icon className="w-3 h-3 sm:w-5 sm:h-5" />
-                      {link.title}
+                      <div className="shrink-0 flex items-center justify-center overflow-hidden">
+                        {link.iconType === "custom" ? (
+                          <img src={link.iconUrl} alt="" className="w-3 h-3 sm:w-5 sm:h-5 rounded-full object-cover" />
+                        ) : (
+                          (() => {
+                            const Icon = iconMap[link.iconType] || LinkIcon;
+                            return <Icon className="w-3 h-3 sm:w-5 sm:h-5" />;
+                          })()
+                        )}
+                      </div>
+                      <span className="truncate">{link.title}</span>
+                      {isNew && <span className="text-[8px] sm:text-[10px] bg-white/20 px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider ml-2">New</span>}
+                      
                       {typeof link.clicks === "number" && (
                         <span className="ml-auto text-[10px] sm:text-sm opacity-70">
                           {link.clicks} clicks
                         </span>
                       )}
-                      {link.id === topLink?.id && (
+                      {isTrending && (
                         <span className="ml-1 px-1 py-0.5 bg-yellow-400 text-yellow-900 rounded text-[10px] sm:text-xs font-semibold">
-                          Top
+                          HOT
                         </span>
                       )}
                     </button>
