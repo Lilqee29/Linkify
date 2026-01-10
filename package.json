@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.12",
+    "canvas-confetti": "^1.9.4",
     "firebase": "^12.1.0",
     "lucide-react": "^0.540.0",
     "qrcode.react": "^4.2.0",
