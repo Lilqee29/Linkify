@@ -1,8 +1,11 @@
 import video1 from "../assets/video1.mp4";
 import video2 from "../assets/video2.mp4";
 import { Link } from 'react-router-dom'
+import { useAuth } from "../contexts/authContext";
 
 const HeroSection = () => {
+  const { currentUser } = useAuth();
+
   return (
     <div className="flex flex-col items-center mt-6 lg:mt-20">
       <h1 className="text-4xl sm:text-6xl lg:text-7xl text-center tracking-wide">
@@ -16,10 +19,12 @@ const HeroSection = () => {
         Bring all your online profiles, projects, and favorite links together in one simple, shareable link. Create your Linkly today and make your bio truly yours!
       </p>
       <div className="flex justify-center my-10">
-        <Link to="/login"  className="bg-gradient-to-r from-orange-500 to-orange-800 py-3 px-4 mx-3 rounded-md">
-         Start for free
+        <Link 
+          to={currentUser ? "/dashboard" : "/login"}  
+          className="bg-gradient-to-r from-orange-500 to-orange-800 py-3 px-8 mx-3 rounded-md text-white font-bold text-lg hover:scale-105 transition-transform"
+        >
+          {currentUser ? "Go to Dashboard" : "Start for free"}
         </Link>
-       
       </div>
       <div className="flex mt-10 justify-center">
         <video

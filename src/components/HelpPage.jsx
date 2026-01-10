@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import Navbar from "./Navbar";
 import { 
   HelpCircle, 
@@ -56,7 +57,10 @@ const HelpPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-[100dvh] bg-black text-white transition-colors duration-500 overflow-x-hidden">
+      <Helmet>
+        <title>Help Center | Linkify</title>
+      </Helmet>
       <Navbar />
       
       <main className="pt-20 px-4 pb-16">

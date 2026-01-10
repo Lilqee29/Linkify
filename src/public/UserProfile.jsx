@@ -122,7 +122,7 @@ const UserProfile = () => {
   return (
     
    <div
-  className="min-h-screen flex flex-col items-center justify-start px-2 py-4 sm:px-6 sm:py-12"
+  className="min-h-[100dvh] flex flex-col items-center justify-start px-2 py-4 sm:px-6 sm:py-12 overflow-x-hidden"
   style={{
     background: theme.backgroundColor,
     fontFamily: theme.fontFamily,

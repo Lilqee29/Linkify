@@ -34,23 +34,33 @@ const Navbar = ({ onEditProfilePic }) => {
         <div className="flex justify-between items-center">
           {/* Logo */}
           <div className="flex items-center flex-shrink-0">
-            <Link to="/#" className="flex items-center">
+            <Link to="/" className="flex items-center">
               <img className="h-20 w-20 sm:h-24 sm:w-24 mr-3 object-contain" src={logo} alt="Logo" />
             </Link>
           </div>
 
           {/* Desktop Nav Items */}
-          <ul className="hidden lg:flex ml-14 space-x-12">
+          <ul className="hidden lg:flex ml-14 space-x-8">
             {navItems.map((item, index) => (
               <li key={index}>
                 <Link 
                   to={item.href} 
-                  className="text-gray-300 hover:text-white transition-colors duration-200 font-medium"
+                  className="text-gray-300 hover:text-white transition-colors duration-200 font-medium whitespace-nowrap"
                 >
                   {item.label}
                 </Link>
               </li>
             ))}
+            {currentUser && (
+              <li>
+                <Link 
+                  to="/dashboard" 
+                  className="text-orange-500 hover:text-orange-400 transition-colors duration-200 font-bold whitespace-nowrap"
+                >
+                  Dashboard
+                </Link>
+              </li>
+            )}
           </ul>
 
           {/* User Info or Sign In / Create Account */}
@@ -144,6 +154,17 @@ const Navbar = ({ onEditProfilePic }) => {
                         </Link>
                       </li>
                     ))}
+                    {currentUser && (
+                      <li>
+                        <Link 
+                          to="/dashboard" 
+                          className="block py-3 px-4 text-orange-500 hover:bg-neutral-800 rounded-lg transition-colors font-bold"
+                          onClick={() => setMobileDrawerOpen(false)}
+                        >
+                          My Dashboard
+                        </Link>
+                      </li>
+                    )}
                   </ul>
                 </div>
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { auth } from '../../../firebase/firebase';
 import { Link, useNavigate } from 'react-router-dom';
+import { Helmet } from "react-helmet-async";
 import { doCreateUserWithEmailAndPassword, logOutUser } from '../../../firebase/auth';
 import { createUserProfile } from '../../../firebase/db'; 
 import { useAlert } from "../../../contexts/AlertContext";
@@ -89,7 +90,10 @@ const Register = () => {
 
     if (showSuccessUI) {
         return (
-            <div className="w-full min-h-screen bg-black flex flex-col selection:bg-indigo-500/30">
+            <div className="w-full min-h-[100dvh] bg-black flex flex-col selection:bg-indigo-500/30 overflow-x-hidden">
+      <Helmet>
+        <title>Create Account | Linkify</title>
+      </Helmet>
                 <Navbar />
                 <main className="flex-grow flex items-center justify-center px-4 py-8 relative overflow-hidden">
                     {/* Background Decorative Elements */}
@@ -161,7 +165,10 @@ const Register = () => {
     }
 
     return (
-        <div className="w-full min-h-screen bg-black flex flex-col">
+        <div className="w-full min-h-[100dvh] bg-black flex flex-col overflow-x-hidden">
+            <Helmet>
+                <title>Join Linkify</title>
+            </Helmet>
             <Navbar />
             <main className="flex-grow flex items-center justify-center px-4 py-8">
                 <div className="w-full max-w-md p-6 rounded-2xl shadow-2xl bg-[#0a0a0c] border border-white/10 text-gray-100 space-y-4 sm:space-y-5">

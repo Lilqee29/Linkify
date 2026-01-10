@@ -103,7 +103,7 @@ const VerifyEmail = () => {
   };
 
   return (
-    <div className="w-full min-h-screen bg-black flex flex-col selection:bg-indigo-500/30">
+    <div className="w-full min-h-[100dvh] bg-black flex flex-col selection:bg-indigo-500/30 overflow-x-hidden">
       <Navbar />
       <main className="flex-grow flex items-center justify-center px-4 py-8 relative overflow-hidden">
         {/* Background Decorative Elements */}

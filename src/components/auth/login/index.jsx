@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Navigate, Link, useLocation } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { doSignInWithGoogle, doSignInWithEmailAndPasswordWithVerification, doResendVerificationEmail } from "../../../firebase/auth";
 import { useAuth } from "../../../contexts/authContext";
 import { useAlert } from "../../../contexts/AlertContext";
@@ -129,10 +130,13 @@ const Login = () => {
   }
 
   return (
-    <div className="relative min-h-screen bg-black">
+    <div className="relative min-h-[100dvh] bg-black transition-colors duration-500 overflow-x-hidden">
+      <Helmet>
+        <title>Login | Linkify</title>
+      </Helmet>
       <Navbar />
 
-      <main className="flex items-center justify-center min-h-[calc(100vh-80px)] px-4 py-8">
+      <main className="flex items-center justify-center min-h-[calc(100dvh-80px)] px-4 py-8">
         <div className="w-full max-w-md p-6 sm:p-8 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-2xl">
           <h3 className="text-white text-xl sm:text-2xl font-bold text-center">Welcome Back</h3>
           <p className="text-gray-400 text-center mb-6 text-sm sm:text-base">Login to continue</p>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/authContext";
-import { PlusCircle, Eye, Edit2, Trash2, X, User, Image as ImageIcon, Palette, Pi, Share, MessageSquare, Trash, BarChart3, Sparkles, Zap, Clock, Calendar, Send } from "lucide-react";
+import { PlusCircle, Eye, Edit2, Trash2, X, User, Image as ImageIcon, Palette, Pi, Share, MessageSquare, Trash, BarChart3, Sparkles, Zap, Clock, Calendar, Send, Activity } from "lucide-react";
+import { Helmet } from "react-helmet-async";
 import DashboardNavbar from "./DashboardNavbar";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useDashboardLinks } from "../../firebase/Dashboardlink";
@@ -538,7 +539,10 @@ useEffect(() => {
 
   // ------------------- JSX -------------------
   return (
-    <div className="min-h-screen bg-[#0f0f11] text-white font-sans selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen lg:min-h-[100dvh] bg-[#0f0f11] text-white font-sans selection:bg-indigo-500 selection:text-white overflow-x-hidden">
+      <Helmet>
+        <title>Editor | Linkify</title>
+      </Helmet>
       {/* Navbar with subtle translucency */}
       <div className="sticky top-0 z-50 backdrop-blur-xl bg-black/50 border-b border-white/5">
          <DashboardNavbar onEditProfilePic={() => setProfilePicModalOpen(true)} />
@@ -561,28 +565,28 @@ useEffect(() => {
            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <button
                 onClick={handleAddLink}
-                className="col-span-2 py-4 px-6 rounded-2xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] transition-all font-bold shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 group"
+                className="col-span-2 py-3.5 sm:py-4 px-4 sm:px-6 rounded-2xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] transition-all font-bold shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 group"
               >
                 <PlusCircle className="w-5 h-5 group-hover:rotate-90 transition-transform" /> Add Link
               </button>
               
               <button
                 onClick={() => setThemeModalOpen(true)}
-                className="py-4 px-6 rounded-2xl bg-neutral-800 hover:bg-neutral-700 active:scale-[0.98] transition-all font-semibold flex flex-col items-center justify-center gap-1 hover:text-indigo-400"
+                className="py-3.5 sm:py-4 px-2 sm:px-6 rounded-2xl bg-neutral-800 hover:bg-neutral-700 active:scale-[0.98] transition-all font-semibold flex flex-col items-center justify-center gap-1 hover:text-indigo-400"
               >
                  <Palette className="w-5 h-5" /> <span className="text-xs">Appearance</span>
               </button>
 
               <button
                 onClick={handleShare}
-                className="py-4 px-6 rounded-2xl bg-neutral-800 hover:bg-neutral-700 active:scale-[0.98] transition-all font-semibold flex flex-col items-center justify-center gap-1 hover:text-green-400"
+                className="py-3.5 sm:py-4 px-2 sm:px-6 rounded-2xl bg-neutral-800 hover:bg-neutral-700 active:scale-[0.98] transition-all font-semibold flex flex-col items-center justify-center gap-1 hover:text-green-400"
               >
                  <Share className="w-5 h-5" /> <span className="text-xs">Share</span>
               </button>
 
               <button
                  onClick={() => setMessagesModalOpen(true)}
-                 className="py-4 px-6 rounded-2xl bg-neutral-800 hover:bg-neutral-700 active:scale-[0.98] transition-all font-semibold flex flex-col items-center justify-center gap-1 hover:text-pink-400 relative"
+                 className="py-3.5 sm:py-4 px-2 sm:px-6 rounded-2xl bg-neutral-800 hover:bg-neutral-700 active:scale-[0.98] transition-all font-semibold flex flex-col items-center justify-center gap-1 hover:text-pink-400 relative"
                >
                   <MessageSquare className="w-5 h-5" />
                   <span className="text-xs">Messages</span>
@@ -596,7 +600,7 @@ useEffect(() => {
 
               <button
                  onClick={() => setAnalyticsModalOpen(true)}
-                 className="py-4 px-6 rounded-2xl bg-neutral-800 hover:bg-neutral-700 active:scale-[0.98] transition-all font-semibold flex flex-col items-center justify-center gap-1 hover:text-blue-400 relative"
+                 className="py-3.5 sm:py-4 px-2 sm:px-6 rounded-2xl bg-neutral-800 hover:bg-neutral-700 active:scale-[0.98] transition-all font-semibold flex flex-col items-center justify-center gap-1 hover:text-blue-400 relative"
                >
                   <BarChart3 className="w-5 h-5" />
                   <span className="text-xs">Analytics</span>
@@ -604,23 +608,37 @@ useEffect(() => {
            </div>
 
            {/* Profile Card (Mini) */}
-           <div className="bg-neutral-900/50 border border-white/5 p-6 rounded-3xl flex items-center gap-6">
-              <div className="relative group cursor-pointer" onClick={() => setProfilePicModalOpen(true)}>
-                 <img
-                   src={profilePic || "https://via.placeholder.com/150"}
-                   alt="Profile"
-                   className="w-20 h-20 rounded-full object-cover border-4 border-neutral-800 group-hover:border-indigo-500 transition-colors"
-                 />
-                 <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Edit2 className="w-5 h-5 text-white" />
-                 </div>
-              </div>
-              <div className="flex-1">
-                 <h2 className="text-xl font-bold">{username}</h2>
-                 <p className="text-sm text-neutral-400 line-clamp-2 mt-1">{bio || "No bio set yet."}</p>
-                 <button onClick={() => setBioModalOpen(true)} className="text-xs text-indigo-400 font-semibold mt-2 hover:underline">Edit Bio</button>
-              </div>
-           </div>
+             <div className="bg-neutral-900/50 border border-white/5 p-6 rounded-3xl flex items-center gap-6 group/profile">
+               <div className="relative group cursor-pointer shrink-0" onClick={() => setProfilePicModalOpen(true)}>
+                  {profilePic ? (
+                    <img
+                      src={profilePic}
+                      alt="Profile"
+                      className="w-20 h-20 rounded-full object-cover border-4 border-neutral-800 group-hover:border-indigo-500 transition-all duration-300 shadow-xl"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 rounded-full border-4 border-neutral-800 group-hover:border-indigo-500 transition-all duration-300 bg-gradient-to-br from-indigo-600 to-violet-700 flex items-center justify-center text-3xl font-black text-white shadow-xl">
+                      {username.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 backdrop-blur-[2px]">
+                     <Edit2 className="w-5 h-5 text-white transform scale-75 group-hover:scale-100 transition-transform" />
+                  </div>
+               </div>
+               <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h2 className="text-xl font-bold truncate">{username}</h2>
+                    <span className="flex items-center gap-1.5 px-2 py-0.5 bg-green-500/10 text-green-500 text-[10px] font-black uppercase tracking-widest rounded-full border border-green-500/20 animate-pulse">
+                      <div className="w-1 h-1 bg-green-500 rounded-full"></div>
+                      Live
+                    </span>
+                  </div>
+                  <p className="text-sm text-neutral-400 line-clamp-2">{bio || "Add a bio to tell the world about yourself."}</p>
+                  <button onClick={() => setBioModalOpen(true)} className="text-xs text-indigo-400 font-bold mt-2 hover:text-indigo-300 transition-colors flex items-center gap-1">
+                    <Edit2 size={10} /> Edit Profile Info
+                  </button>
+               </div>
+            </div>
 
            {/* Links Manager */}
            <div className="space-y-6">
@@ -642,10 +660,10 @@ useEffect(() => {
                         return (
                           <div
                             key={link.id}
-                            className="group flex items-center justify-between p-4 rounded-2xl bg-neutral-800/40 border border-white/5 hover:border-indigo-500/30 hover:bg-neutral-800 transition-all cursor-move"
+                            className="group flex items-center justify-between p-3 sm:p-4 rounded-2xl bg-neutral-800/40 border border-white/5 hover:border-indigo-500/30 hover:bg-neutral-800 transition-all cursor-move"
                           >
-                             <div className="flex items-center gap-4 overflow-hidden">
-                               <div className="relative">
+                             <div className="flex items-center gap-3 sm:gap-4 overflow-hidden">
+                               <div className="relative shrink-0">
                                  <div className="p-3 bg-neutral-900 rounded-xl text-neutral-400 group-hover:text-white transition-colors overflow-hidden">
                                     {link.iconType === "custom" ? (
                                       <img src={link.iconUrl} alt="" className="w-5 h-5 rounded-full object-cover" />
@@ -670,7 +688,7 @@ useEffect(() => {
                                </div>
                              </div>
                             
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity translate-x-4 group-hover:translate-x-0">
+                            <div className="flex items-center gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity sm:translate-x-4 group-hover:translate-x-0">
                                <button 
                                  onClick={() => handleEditLink(link)} 
                                  className="p-2 hover:bg-white/10 rounded-lg text-neutral-400 hover:text-white transition"
@@ -819,7 +837,7 @@ useEffect(() => {
       {/* ------------------- Messages Modal ------------------- */}
       {messagesModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-          <div className="bg-neutral-900 p-6 rounded-xl w-full max-w-md relative max-h-[90vh] overflow-y-auto custom-scrollbar mx-4">
+          <div className="bg-neutral-900 p-4 sm:p-6 rounded-xl w-full max-w-md relative max-h-[90vh] overflow-y-auto custom-scrollbar mx-4">
             <button onClick={() => setMessagesModalOpen(false)} className="absolute top-4 right-4 text-neutral-400 hover:text-orange-500">
               <X />
             </button>
@@ -871,7 +889,7 @@ useEffect(() => {
       {/* ------------------- Analytics Modal ------------------- */}
       {analyticsModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-          <div className="bg-neutral-900 p-6 rounded-xl w-full max-w-md relative max-h-[90vh] overflow-y-auto custom-scrollbar mx-4">
+          <div className="bg-neutral-900 p-4 sm:p-6 rounded-xl w-full max-w-md relative max-h-[90vh] overflow-y-auto custom-scrollbar mx-4">
             <button onClick={() => setAnalyticsModalOpen(false)} className="absolute top-4 right-4 text-neutral-400 hover:text-orange-500">
               <X />
             </button>
@@ -951,7 +969,7 @@ useEffect(() => {
       {/* ------------------- Bio Modal ------------------- */}
       {bioModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-          <div className="bg-neutral-900 p-6 rounded-xl w-full max-w-md relative max-h-[90vh] overflow-y-auto custom-scrollbar mx-4">
+          <div className="bg-neutral-900 p-4 sm:p-6 rounded-xl w-full max-w-md relative max-h-[90vh] overflow-y-auto custom-scrollbar mx-4">
             <button onClick={() => setBioModalOpen(false)} className="absolute top-4 right-4 text-neutral-400 hover:text-orange-500">
               <X />
             </button>
@@ -988,7 +1006,7 @@ useEffect(() => {
       {/* ------------------- Profile Pic Modal ------------------- */}
       {profilePicModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-          <div className="bg-neutral-900 p-6 rounded-xl w-full max-w-md relative max-h-[90vh] overflow-y-auto custom-scrollbar mx-4">
+          <div className="bg-neutral-900 p-4 sm:p-6 rounded-xl w-full max-w-md relative max-h-[90vh] overflow-y-auto custom-scrollbar mx-4">
             <div className="absolute top-4 right-4 flex items-center gap-2">
               <button 
                 onClick={() => {
@@ -1060,7 +1078,7 @@ useEffect(() => {
       {/* ------------------- Add/Edit Link Modal ------------------- */}
       {modalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-          <div className="bg-neutral-900 p-6 rounded-xl w-full max-w-md relative max-h-[90vh] overflow-y-auto custom-scrollbar mx-4">
+          <div className="bg-neutral-900 p-4 sm:p-6 rounded-xl w-full max-w-md relative max-h-[90vh] overflow-y-auto custom-scrollbar mx-4">
             <button onClick={() => setModalOpen(false)} className="absolute top-4 right-4 text-neutral-400 hover:text-orange-500">
               <X />
             </button>
@@ -1224,7 +1242,7 @@ useEffect(() => {
       {/* ------------------- Theme Selection Modal ------------------- */}
       {themeModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-          <div className="bg-neutral-900 p-6 rounded-xl w-full max-w-md relative max-h-[90vh] overflow-y-auto custom-scrollbar mx-4">
+          <div className="bg-neutral-900 p-4 sm:p-6 rounded-xl w-full max-w-md relative max-h-[90vh] overflow-y-auto custom-scrollbar mx-4">
             <button
               onClick={() => setThemeModalOpen(false)}
               className="absolute top-4 right-4 text-neutral-400 hover:text-orange-500"
@@ -1367,7 +1385,7 @@ useEffect(() => {
               {/* ------------------- Theme Card Preview ------------------- */}
             <div className="mb-6 mt-12 flex justify-center">
               {/* Phone Mockup Container */}
-              <div className="relative w-[300px] h-[600px] border-[14px] border-neutral-900 rounded-[2.5rem] shadow-2xl bg-neutral-900 overflow-hidden ring-4 ring-neutral-800">
+              <div className="relative w-full max-w-[280px] sm:w-[300px] h-[520px] sm:h-[600px] border-[10px] sm:border-[14px] border-neutral-900 rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl bg-neutral-900 overflow-hidden ring-2 sm:ring-4 ring-neutral-800 mx-auto">
                 {/* Dynamic Island / Notch */}
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 h-[24px] w-[100px] bg-black rounded-b-[1rem] z-20 flex justify-center items-center">
                    <div className="w-12 h-1 bg-neutral-800 rounded-full opacity-30"></div>

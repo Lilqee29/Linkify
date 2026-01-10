@@ -69,7 +69,7 @@ useEffect(() => {
       <nav className="bg-black border-b border-neutral-800 px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center">
         {/* Logo / Name */}
         <div className="flex items-center flex-shrink-0">
-          <Link to="/#" className="flex items-center">
+          <Link to="/" className="flex items-center">
             <img className="h-16 w-16 sm:h-20 sm:w-20 mr-3 object-contain" src={logo} alt="Logo" />
           </Link>
         </div>

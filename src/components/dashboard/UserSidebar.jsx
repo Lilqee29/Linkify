@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/authContext";
-import { X, HelpCircle, Sparkles, Trash } from "lucide-react";
 import { Link } from "react-router-dom";
 import { doc, setDoc, getDoc, deleteDoc, collection, getDocs } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
 import { deleteUser, updatePassword, getAuth, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth"; // 🔹 for auth actions
 import { useAlert } from "../../contexts/AlertContext";
 import { useNavigate } from "react-router-dom"; 
-
+import { X, HelpCircle, Sparkles, Trash, Eye, LayoutDashboard, User as UserIcon, ListPlus } from "lucide-react";
 
 
 const UserSidebar = ({ isOpen, onClose }) => {
@@ -257,6 +256,25 @@ const UserSidebar = ({ isOpen, onClose }) => {
 
           <h1 className="text-2xl font-bold text-white">{username}</h1>
 
+          {/* Navigation Section */}
+          <div className="flex flex-col gap-2 w-full mt-6">
+             <h4 className="text-[10px] uppercase font-bold text-neutral-500 tracking-widest pl-2 mb-1">Navigation</h4>
+             <Link
+              to="/dashboard"
+              onClick={onClose}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-white font-bold transition border border-indigo-500/20"
+             >
+               <LayoutDashboard size={18} className="text-indigo-400" /> My Dashboard
+             </Link>
+             <Link
+              to={`/${username}`}
+              onClick={onClose}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-green-500/10 hover:bg-green-500/20 text-white font-bold transition border border-green-500/20"
+             >
+               <Eye size={18} className="text-green-400" /> View Public Page
+             </Link>
+          </div>
+
           {/* Deletion Timer */}
           {timeLeft > 0 && (
             <div className="p-2 bg-red-600 text-white rounded mt-2 flex items-center justify-between w-full">
@@ -274,7 +292,7 @@ const UserSidebar = ({ isOpen, onClose }) => {
           <div className="flex flex-col gap-4 mt-6 w-full">
             <button
               onClick={() => setIsModalOpen(true)}
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-full text-sm font-semibold transition"
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2.5 rounded-full text-xs sm:text-sm font-semibold transition"
             >
               Change Username
             </button>
@@ -318,7 +336,7 @@ const UserSidebar = ({ isOpen, onClose }) => {
       {/* Modal for Changing Username */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
-          <div className="bg-black p-6 rounded-2xl w-full max-w-sm border border-orange-500 min-h-[200px]">
+          <div className="bg-black p-4 sm:p-6 rounded-2xl w-full max-w-sm border border-orange-500 min-h-[180px]">
             <h2 className="text-xl font-bold mb-4 text-white">
               Change Username
             </h2>
@@ -350,7 +368,7 @@ const UserSidebar = ({ isOpen, onClose }) => {
       {/* Modal for Changing Password */}
       {isPasswordModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
-          <div className="bg-black p-6 rounded-2xl w-full max-w-sm border border-blue-500 min-h-[200px]">
+          <div className="bg-black p-4 sm:p-6 rounded-2xl w-full max-w-sm border border-blue-500 min-h-[180px]">
             <h2 className="text-xl font-bold mb-4 text-white">
               Change Password
             </h2>
@@ -382,7 +400,7 @@ const UserSidebar = ({ isOpen, onClose }) => {
       {/* FINAL DELETE CONFIRMATION MODAL */}
       {isConfirmDeleteModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[70] p-4">
-          <div className="bg-neutral-900 p-8 rounded-[2rem] w-full max-w-md border border-red-500/30 shadow-2xl relative">
+          <div className="bg-neutral-900 p-5 sm:p-8 rounded-[2rem] w-full max-w-md border border-red-500/30 shadow-2xl relative">
             <div className="text-center space-y-4">
                <div className="w-16 h-16 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center mx-auto">
                   <Trash size={32} />

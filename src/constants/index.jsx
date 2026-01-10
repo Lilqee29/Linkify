@@ -13,10 +13,8 @@ import user5 from "../assets/profile-pictures/user5.jpg";
 import user6 from "../assets/profile-pictures/user6.jpg";
 
 export const navItems = [
-  { label: "Features", href: "#features" },
-  { label: "Workflow", href: "#workflow" },
-  { label: "Testimonials", href: "#testimonials" },
-  { label: "Help", href: "/help" },
+  { label: "Features", href: "/#features" },
+  { label: "Help Center", href: "/help" },
 ];
 
 
@@ -160,25 +158,18 @@ export const pricingOptions = [
 
 
 export const resourcesLinks = [
-  { href: "#", text: "Getting Started" },
-  { href: "#", text: "Help Center" },
-  { href: "#", text: "Tutorials" },
-  { href: "#", text: "FAQs" },
-  { href: "#", text: "Contact Support" },
+  { href: "/register", text: "Getting Started" },
+  { href: "/help", text: "Help Center" },
+  { href: "/help", text: "FAQs" },
 ];
 
 export const platformLinks = [
-  { href: "#", text: "Features" },
-  { href: "#", text: "Pricing" },
-  { href: "#", text: "Custom Links" },
-  { href: "#", text: "Analytics" },
-  { href: "#", text: "Pro Tools" },
+  { href: "/#features", text: "Features" },
+  { href: "/dashboard", text: "Dashboard" },
+  { href: "/dashboard", text: "Analytics" },
 ];
 
 export const communityLinks = [
-  { href: "#", text: "Blog" },
   { href: "#", text: "Discord" },
-  { href: "#", text: "Social Media" },
-  { href: "#", text: "Events" },
-  { href: "#", text: "Feedback" },
+  { href: "/help", text: "Feedback" },
 ];

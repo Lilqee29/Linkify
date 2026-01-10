@@ -147,21 +147,41 @@ const PublicProfile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading profile...</p>
+      <div className="min-h-[100dvh] bg-black flex flex-col items-center justify-center p-4">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin"></div>
+          <div className="absolute inset-0 flex items-center justify-center text-orange-500">
+            <LinkIcon className="w-6 h-6 animate-pulse" />
+          </div>
         </div>
+        <p className="mt-6 text-gray-400 font-medium tracking-wide animate-pulse">Fetching Linkify Profile...</p>
       </div>
     );
   }
 
   if (error || !profileData) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 text-lg">{error || "Profile not found"}</p>
-          <p className="text-gray-600 mt-2">The profile you're looking for doesn't exist.</p>
+      <div className="min-h-[100dvh] bg-[#0a0a0c] flex flex-col items-center justify-center px-6 text-center">
+        <div className="w-24 h-24 bg-red-500/10 rounded-3xl flex items-center justify-center mb-8 border border-red-500/20">
+          <AlertCircle className="w-12 h-12 text-red-500" />
+        </div>
+        <h1 className="text-4xl font-black text-white mb-4 tracking-tight">404: Not Found</h1>
+        <p className="text-neutral-400 text-lg max-w-sm mb-10 leading-relaxed">
+          The Linkify profile <span className="text-white font-mono">@{username}</span> doesn't exist or has been moved.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4 w-full max-w-xs">
+          <a
+            href="/"
+            className="flex-1 px-8 py-4 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-2xl transition-all shadow-lg shadow-orange-600/20 active:scale-95"
+          >
+            Go Home
+          </a>
+          <a
+            href="/register"
+            className="flex-1 px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-bold rounded-2xl border border-white/10 transition-all active:scale-95"
+          >
+            Create Mine
+          </a>
         </div>
       </div>
     );
@@ -253,7 +273,7 @@ const PublicProfile = () => {
         {profilePic && <meta name="twitter:image" content={profilePic} />}
       </Helmet>
 
-      <div className="min-h-screen flex flex-col items-center pt-16 px-4 pb-20 transition-colors duration-500 overflow-x-hidden" style={{ background: theme.backgroundColor, fontFamily: theme.fontFamily, color: theme.textColor }}>
+      <div className="min-h-screen lg:min-h-[100dvh] flex flex-col items-center pt-16 px-4 pb-20 transition-colors duration-500 overflow-x-hidden" style={{ background: theme.backgroundColor, fontFamily: theme.fontFamily, color: theme.textColor }}>
         
         {/* Spotlight Styles */}
         <style dangerouslySetInnerHTML={{ __html: `
@@ -394,7 +414,7 @@ const PublicProfile = () => {
 
             {/* Footer */}
             <div className="mt-16 flex flex-col items-center gap-2 opacity-50 transition-opacity hover:opacity-100">
-               <QRCodeCanvas id="profile-qr" value={window.location.href} size={40} bgColor="transparent" fgColor={theme.textColor} level="L" />
+               <QRCodeCanvas id="profile-qr" value={window.location.href} size={64} bgColor="transparent" fgColor={theme.textColor} level="H" />
                <p className="text-[10px] font-bold tracking-[0.2em] mt-2 uppercase">
                   Powered by Linkify
                </p>
@@ -406,7 +426,7 @@ const PublicProfile = () => {
       {/* Confirmation Modal */}
       {confirmModal.isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-          <div className="bg-neutral-900 p-6 rounded-xl w-11/12 max-w-md relative">
+          <div className="bg-neutral-900 p-4 sm:p-6 rounded-xl w-11/12 max-w-md relative">
             <div className="flex items-center gap-3 mb-4">
               <div className={`w-10 h-10 rounded-full ${colors.bg} flex items-center justify-center`}>
                 {getModalIcon(confirmModal.type)}

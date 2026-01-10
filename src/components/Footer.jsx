@@ -1,4 +1,6 @@
 import { resourcesLinks, platformLinks, communityLinks } from "../constants";
+import { Link } from "react-router-dom";
+
 const Footer = () => {
   return (
     <footer className="mt-20 border-t py-10 border-neutral-700">
@@ -8,12 +10,21 @@ const Footer = () => {
           <ul className="space-y-2">
             {resourcesLinks.map((link, index) => (
               <li key={index}>
-                <a
-                  href={link.href}
-                  className="text-neutral-300 hover:text-white"
-                >
-                  {link.text}
-                </a>
+                {link.href.startsWith("/") ? (
+                  <Link
+                    to={link.href}
+                    className="text-neutral-300 hover:text-white"
+                  >
+                    {link.text}
+                  </Link>
+                ) : (
+                  <a
+                    href={link.href}
+                    className="text-neutral-300 hover:text-white"
+                  >
+                    {link.text}
+                  </a>
+                )}
               </li>
             ))}
           </ul>
@@ -23,12 +34,21 @@ const Footer = () => {
           <ul className="space-y-2">
             {platformLinks.map((link, index) => (
               <li key={index}>
-                <a
-                  href={link.href}
-                  className="text-neutral-300 hover:text-white"
-                >
-                  {link.text}
-                </a>
+                {link.href.startsWith("/") ? (
+                  <Link
+                    to={link.href}
+                    className="text-neutral-300 hover:text-white"
+                  >
+                    {link.text}
+                  </Link>
+                ) : (
+                  <a
+                    href={link.href}
+                    className="text-neutral-300 hover:text-white"
+                  >
+                    {link.text}
+                  </a>
+                )}
               </li>
             ))}
           </ul>
@@ -38,12 +58,21 @@ const Footer = () => {
           <ul className="space-y-2">
             {communityLinks.map((link, index) => (
               <li key={index}>
-                <a
-                  href={link.href}
-                  className="text-neutral-300 hover:text-white"
-                >
-                  {link.text}
-                </a>
+                {link.href.startsWith("/") ? (
+                  <Link
+                    to={link.href}
+                    className="text-neutral-300 hover:text-white"
+                  >
+                    {link.text}
+                  </Link>
+                ) : (
+                  <a
+                    href={link.href}
+                    className="text-neutral-300 hover:text-white"
+                  >
+                    {link.text}
+                  </a>
+                )}
               </li>
             ))}
           </ul>

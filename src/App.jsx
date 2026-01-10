@@ -6,7 +6,7 @@ import Navbar from "./components/Navbar";
 import HeroSection from "./components/HeroSection";
 import FeatureSection from "./components/FeatureSection";
 import Workflow from "./components/Workflow";
-// import Pricing from "./components/Pricing";
+import Pricing from "./components/Pricing";
 import Testimonials from "./components/Testimonials";
 import Footer from "./components/Footer";
 
@@ -30,14 +30,14 @@ import { AlertProvider } from "./contexts/AlertContext";
 
 // ===== Landing Page Layout =====
 const Landing = () => (
-  <div className="bg-white dark:bg-black text-black dark:text-white min-h-screen">
+  <div className="bg-white dark:bg-black text-black dark:text-white min-h-[100dvh] transition-colors duration-500 overflow-x-hidden">
     <Navbar />
     <div className="max-w-7xl mx-auto pt-20 px-6">
       <HeroSection />
       <FeatureSection />
-      <Workflow />
+      {/* <Workflow /> */}
       {/* <Pricing /> */}
-      <Testimonials />
+      {/* <Testimonials /> */}
       <Footer />
     </div>
   </div>
