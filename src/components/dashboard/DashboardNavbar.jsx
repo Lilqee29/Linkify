@@ -5,12 +5,12 @@ import { useNavigate, Link } from "react-router-dom";
 import logo from "../../assets/logo.png";
 import defaultAvatar from "../../assets/avatar.png"; 
 import UserSidebar from "./UserSidebar"; 
-import { Pencil, LogOut, HelpCircle } from "lucide-react";
+import { LogOut, HelpCircle } from "lucide-react";
 import { doc, onSnapshot } from "firebase/firestore"; // use onSnapshot for live updates
 import { db } from "../../firebase/firebase"; 
 import { useAlert } from "../../contexts/AlertContext";
 
-const DashboardNavbar = ({ onEditProfilePic }) => {
+const DashboardNavbar = () => {
   const { currentUser } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [username, setUsername] = useState("User"); // state for username
@@ -89,23 +89,21 @@ useEffect(() => {
           </Link>
 
           <div className="flex items-center space-x-2 sm:space-x-3">
-            {/* User Avatar with Pencil */}
-            <div className="relative">
-              <button onClick={handleSidebarToggle} className="focus:outline-none">
+            {/* User Avatar - Opens Sidebar */}
+            <div className="relative group">
+              <button 
+                onClick={handleSidebarToggle} 
+                className="focus:outline-none relative block"
+                title="Account Settings"
+              >
                 <img
                   src={avatarSrc}
                   alt="User Avatar"
-                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-orange-500 hover:border-orange-400 transition cursor-pointer"
+                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-indigo-600 group-hover:border-white transition-all duration-300 shadow-md object-cover"
                 />
-              </button>
-              {/* Pencil icon overlay */}
-              <button
-                onClick={onEditProfilePic}
-                className="absolute bottom-0 right-0 bg-white rounded-full p-1 shadow hover:bg-orange-100"
-                style={{ transform: "translate(25%, 25%)" }}
-                title="Change Profile Picture"
-              >
-                <Pencil size={12} className="text-orange-500 sm:w-3 sm:h-3" />
+                
+                {/* Minimal Indicator Dot */}
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-black rounded-full"></div>
               </button>
             </div>
 

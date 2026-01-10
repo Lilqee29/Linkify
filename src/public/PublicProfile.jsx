@@ -1,9 +1,9 @@
 // src/public/PublicProfile.jsx
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { FaDiscord, FaPinterest, FaReddit, FaSnapchat, FaTelegram, FaTiktok, FaWhatsapp } from "react-icons/fa";
-import { Instagram, Youtube, Twitter, Facebook, Github, Link as LinkIcon, Share, CheckCircle, AlertCircle, MessageSquare, Send } from "lucide-react";
+import { Instagram, Youtube, Twitter, Facebook, Github, Link as LinkIcon, Share, CheckCircle, AlertCircle, MessageSquare, Send, ArrowLeft } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { sendMessageToUser } from "../firebase/DashboardMessages";
@@ -30,6 +30,8 @@ const iconMap = {
 
 const PublicProfile = () => {
   const { username } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -287,6 +289,22 @@ const PublicProfile = () => {
           }
         `}} />
         
+        {/* Back Button (Only show if history exists or state is present) */}
+        {(location.state || window.history.length > 1) && (
+          <button
+            onClick={() => navigate(-1)}
+            className="fixed top-6 left-6 p-3 rounded-full shadow-lg flex items-center justify-center z-50 transition-all hover:scale-110 active:scale-95 group backdrop-blur-sm"
+            style={{
+              background: "rgba(255,255,255,0.1)",
+              border: `1px solid ${theme.textColor}20`,
+              color: theme.textColor
+            }}
+            title="Go Back"
+          >
+            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+          </button>
+        )}
+
         {/* Share Button (Keep this, as it's useful on the live page) */}
         <button
           onClick={handleShare}

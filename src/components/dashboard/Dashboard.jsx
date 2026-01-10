@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/authContext";
-import { PlusCircle, Eye, Edit2, Trash2, X, User, Image as ImageIcon, Palette, Pi, Share, MessageSquare, Trash, BarChart3, Sparkles, Zap, Clock, Calendar, Send, Activity } from "lucide-react";
+import { PlusCircle, Eye, Edit2, Trash2, X, User, Image as ImageIcon, Palette, Pi, Share, MessageSquare, Trash, BarChart3, Sparkles, Zap, Clock, Calendar, Send, Activity, Camera } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import DashboardNavbar from "./DashboardNavbar";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -185,6 +185,7 @@ const Dashboard = () => {
 
   const [bioModalOpen, setBioModalOpen] = useState(false);
   const [profilePicModalOpen, setProfilePicModalOpen] = useState(false);
+  const [tempUsername, setTempUsername] = useState("");
 
   const { bio, amaEnabled, handleSaveProfile, loading: bioLoading } = useDashboardProfile(); 
   const [tempBio, setTempBio] = useState(bio); // Local state for editing
@@ -192,7 +193,8 @@ const Dashboard = () => {
   // Update tempBio when bio loads from db
   useEffect(() => { 
     setTempBio(bio); 
-  }, [bio]);
+    setTempUsername(username);
+  }, [bio, username]);
 
   const { profilePic,profileFile, setProfileFile, handleSaveProfilePic } = useDashboardProfilePic();
 
@@ -545,7 +547,7 @@ useEffect(() => {
       </Helmet>
       {/* Navbar with subtle translucency */}
       <div className="sticky top-0 z-50 backdrop-blur-xl bg-black/50 border-b border-white/5">
-         <DashboardNavbar onEditProfilePic={() => setProfilePicModalOpen(true)} />
+         <DashboardNavbar />
       </div>
 
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-10 flex flex-col lg:flex-row gap-8 lg:gap-12">
@@ -622,7 +624,11 @@ useEffect(() => {
                     </div>
                   )}
                   <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 backdrop-blur-[2px]">
-                     <Edit2 className="w-5 h-5 text-white transform scale-75 group-hover:scale-100 transition-transform" />
+                     <Camera className="w-6 h-6 text-white transform scale-75 group-hover:scale-100 transition-transform" />
+                  </div>
+                  {/* Minimal Floating Camera Icon */}
+                  <div className="absolute bottom-0 right-0 w-7 h-7 bg-indigo-600 rounded-full border-2 border-[#0f0f11] flex items-center justify-center shadow-lg z-20">
+                     <Camera size={12} className="text-white" />
                   </div>
                </div>
                <div className="flex-1 min-w-0">
@@ -634,8 +640,8 @@ useEffect(() => {
                     </span>
                   </div>
                   <p className="text-sm text-neutral-400 line-clamp-2">{bio || "Add a bio to tell the world about yourself."}</p>
-                  <button onClick={() => setBioModalOpen(true)} className="text-xs text-indigo-400 font-bold mt-2 hover:text-indigo-300 transition-colors flex items-center gap-1">
-                    <Edit2 size={10} /> Edit Profile Info
+                  <button onClick={() => setBioModalOpen(true)} className="text-xs text-indigo-400 font-bold mt-2 hover:text-indigo-300 transition-colors flex items-center gap-1.5 px-3 py-1.5 bg-indigo-500/5 rounded-lg border border-indigo-500/10 active:scale-95">
+                    <Edit2 size={12} /> Edit Profile
                   </button>
                </div>
             </div>
@@ -837,17 +843,20 @@ useEffect(() => {
       {/* ------------------- Messages Modal ------------------- */}
       {messagesModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-          <div className="bg-neutral-900 p-4 sm:p-6 rounded-xl w-full max-w-md relative max-h-[90vh] overflow-y-auto custom-scrollbar mx-4">
-            <button onClick={() => setMessagesModalOpen(false)} className="absolute top-4 right-4 text-neutral-400 hover:text-orange-500">
-              <X />
+          <div className="bg-neutral-900 p-4 sm:p-8 rounded-xl w-full max-w-md relative max-h-[90vh] overflow-y-auto custom-scrollbar mx-4">
+            <button 
+              onClick={() => setMessagesModalOpen(false)} 
+              className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/5 text-neutral-400 hover:text-orange-500 transition-all"
+            >
+              <X size={20} />
             </button>
-            <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold flex items-center gap-2">
-                  <MessageSquare /> Inbox <span className="text-sm opacity-50 font-normal">({messages.length})</span>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 mt-2">
+                <h2 className="text-2xl font-black flex items-center gap-3">
+                  <MessageSquare className="text-indigo-500" /> Inbox <span className="text-sm opacity-40 font-bold">({messages.length})</span>
                 </h2>
                 
-                <div className="flex items-center gap-2 bg-neutral-800 px-3 py-1.5 rounded-full border border-white/5">
-                   <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">AMA</span>
+                <div className="flex items-center gap-3 bg-neutral-800 px-4 py-2 rounded-full border border-white/5 self-start">
+                   <span className="text-[10px] font-black uppercase tracking-[0.1em] text-neutral-400">AMA</span>
                    <button 
                      onClick={() => handleSaveProfile({ amaEnabled: !amaEnabled })}
                      className={`w-8 h-4 rounded-full transition-colors relative ${amaEnabled ? 'bg-orange-500' : 'bg-neutral-600'}`}
@@ -973,29 +982,48 @@ useEffect(() => {
             <button onClick={() => setBioModalOpen(false)} className="absolute top-4 right-4 text-neutral-400 hover:text-orange-500">
               <X />
             </button>
-            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-              <Edit2 /> Edit Bio
-            </h2>
-            <textarea
-              value={tempBio}
-              onChange={(e) => setTempBio(e.target.value)}
-              className="w-full p-3 rounded-lg bg-neutral-800 text-white placeholder:text-neutral-400 focus:ring-2 focus:ring-orange-500 outline-none"
-              rows={5}
-              placeholder="Tell the world about yourself..."
-            />
+            <div className="space-y-4 mb-6">
+              <div className="space-y-1.5">
+                <label className="text-[10px] uppercase font-black text-neutral-500 tracking-widest ml-1">Username</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 font-bold">@</span>
+                  <input
+                    type="text"
+                    value={tempUsername}
+                    onChange={(e) => setTempUsername(e.target.value.replace(/\s+/g, '').toLowerCase())}
+                    className="w-full pl-8 pr-4 py-3 rounded-xl bg-neutral-800 text-white placeholder:text-neutral-400 focus:ring-2 focus:ring-indigo-500 outline-none border border-white/5 transition-all"
+                    placeholder="yourname"
+                  />
+                </div>
+                <p className="text-[10px] text-neutral-500 ml-1">This will be your link: linkify.com/{tempUsername || 'username'}</p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] uppercase font-black text-neutral-500 tracking-widest ml-1">Bio / Tagline</label>
+                <textarea
+                  value={tempBio}
+                  onChange={(e) => setTempBio(e.target.value)}
+                  className="w-full p-4 rounded-xl bg-neutral-800 text-white placeholder:text-neutral-400 focus:ring-2 focus:ring-indigo-500 outline-none border border-white/5 transition-all min-h-[120px]"
+                  placeholder="Tell the world about yourself..."
+                />
+              </div>
+            </div>
             {/* Removed toggle from here as it's now in the Inbox modal */}
 
             <button
                onClick={async () => {
-                await handleSaveProfile({ bio: tempBio }); // save to Firestore
+                await handleSaveProfile({ 
+                  bio: tempBio,
+                  username: tempUsername 
+                }); // save to Firestore
                 setBioModalOpen(false); // close modal
               }} 
               disabled={bioLoading}
-              className={`w-full font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 ${
-                  bioLoading ? "bg-gray-600 cursor-not-allowed" : "bg-orange-500 text-black hover:bg-orange-600"
+              className={`w-full font-black py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95 ${
+                  bioLoading ? "bg-gray-600 cursor-not-allowed" : "bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-500/20"
               }`}
             >
-              {bioLoading ? "Saving..." : <><Edit2 className="w-4 h-4" /> Save Bio</>}
+              {bioLoading ? "Updating Profile..." : <><Activity className="w-5 h-5" /> Save Changes</>}
             </button>
           </div>
         </div>
