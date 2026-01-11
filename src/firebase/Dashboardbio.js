@@ -7,8 +7,13 @@ import { useAlert } from "../contexts/AlertContext";
 export const useDashboardProfile = () => {
   const [bio, setBio] = useState("");
   const [amaEnabled, setAmaEnabled] = useState(true);
+  const [phone, setPhone] = useState("");
+  const [professionalEmail, setProfessionalEmail] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
+  const [company, setCompany] = useState("");
+  const [location, setLocation] = useState("");
+  
   const { showAlert } = useAlert();
-
   const [loading, setLoading] = useState(false);
 
   // Load profile data from Firestore
@@ -24,6 +29,11 @@ export const useDashboardProfile = () => {
           const data = snapshot.data();
           setBio(data.bio || "");
           setAmaEnabled(data.amaEnabled !== undefined ? data.amaEnabled : true);
+          setPhone(data.phone || "");
+          setProfessionalEmail(data.professionalEmail || "");
+          setJobTitle(data.jobTitle || "");
+          setCompany(data.company || "");
+          setLocation(data.location || "");
         }
       } catch (error) {
         console.error("Error fetching profile:", error);
@@ -47,6 +57,11 @@ export const useDashboardProfile = () => {
       
       if (updates.bio !== undefined) setBio(updates.bio);
       if (updates.amaEnabled !== undefined) setAmaEnabled(updates.amaEnabled);
+      if (updates.phone !== undefined) setPhone(updates.phone);
+      if (updates.professionalEmail !== undefined) setProfessionalEmail(updates.professionalEmail);
+      if (updates.jobTitle !== undefined) setJobTitle(updates.jobTitle);
+      if (updates.company !== undefined) setCompany(updates.company);
+      if (updates.location !== undefined) setLocation(updates.location);
       
       showAlert("Profile updated successfullly! 🚀", "success");
     } catch (err) {
@@ -57,5 +72,17 @@ export const useDashboardProfile = () => {
     }
   };
 
-  return { bio, amaEnabled, setBio, setAmaEnabled, handleSaveProfile, loading };
+  return { 
+    bio, 
+    amaEnabled, 
+    phone, 
+    professionalEmail, 
+    jobTitle, 
+    company, 
+    location,
+    setBio, 
+    setAmaEnabled, 
+    handleSaveProfile, 
+    loading 
+  };
 };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/authContext";
-import { PlusCircle, Eye, Edit2, Trash2, X, User, Image as ImageIcon, Palette, Pi, Share, MessageSquare, Trash, BarChart3, Sparkles, Zap, Clock, Calendar, Send, Activity, Camera } from "lucide-react";
+import { PlusCircle, Eye, Edit2, Trash2, X, User, Image as ImageIcon, Palette, Pi, Share, MessageSquare, Trash, BarChart3, Sparkles, Zap, Clock, Calendar, Send, Activity, Camera, Briefcase, Phone, Mail, MapPin } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import DashboardNavbar from "./DashboardNavbar";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -186,15 +186,57 @@ const Dashboard = () => {
   const [bioModalOpen, setBioModalOpen] = useState(false);
   const [profilePicModalOpen, setProfilePicModalOpen] = useState(false);
   const [tempUsername, setTempUsername] = useState("");
+  const [tempBio, setTempBio] = useState("");
+  const [tempPhone, setTempPhone] = useState("");
+  const [tempProfessionalEmail, setTempProfessionalEmail] = useState("");
+  const [tempJobTitle, setTempJobTitle] = useState("");
+  const [tempCompany, setTempCompany] = useState("");
+  const [tempLocation, setTempLocation] = useState("");
 
-  const { bio, amaEnabled, handleSaveProfile, loading: bioLoading } = useDashboardProfile(); 
-  const [tempBio, setTempBio] = useState(bio); // Local state for editing
+  const { 
+    bio, 
+    amaEnabled, 
+    phone, 
+    professionalEmail, 
+    jobTitle, 
+    company, 
+    location: userLocation, 
+    handleSaveProfile, 
+    loading: bioLoading 
+  } = useDashboardProfile(); 
 
-  // Update tempBio when bio loads from db
+  // Update temp fields when data loads from db
   useEffect(() => { 
-    setTempBio(bio); 
-    setTempUsername(username);
-  }, [bio, username]);
+    setTempBio(bio || ""); 
+    setTempUsername(username || "");
+    setTempPhone(phone || "");
+    setTempProfessionalEmail(professionalEmail || "");
+    setTempJobTitle(jobTitle || "");
+    setTempCompany(company || "");
+    setTempLocation(userLocation || "");
+  }, [bio, username, phone, professionalEmail, jobTitle, company, userLocation]);
+
+  const generateVCard = () => {
+    const vcard = `BEGIN:VCARD
+VERSION:3.0
+FN:${username}
+TITLE:${jobTitle}
+ORG:${company}
+TEL;TYPE=CELL:${phone}
+EMAIL;TYPE=WORK:${professionalEmail}
+ADR;TYPE=WORK:;;${userLocation};;;;
+END:VCARD`;
+    
+    const blob = new Blob([vcard], { type: "text/vcard" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `${username}.vcf`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showAlert("V-Card generated! 📇", "success");
+  };
 
   const { profilePic,profileFile, setProfileFile, handleSaveProfilePic } = useDashboardProfilePic();
 
@@ -397,7 +439,12 @@ const saveProfilePic = async () => {
         links, 
         bio, 
         profilePic,
-        theme: themeData
+        theme: themeData,
+        phone,
+        professionalEmail,
+        jobTitle,
+        company,
+        location: userLocation
       } 
     });
   };
@@ -786,12 +833,72 @@ useEffect(() => {
                         </div>
                       </div>
 
-                      <div className="text-center w-full z-10 mb-8 space-y-2">
-                        <h1 className="text-xl font-bold tracking-tight">@{username}</h1>
-                        <p className="text-sm opacity-80 leading-relaxed line-clamp-3">
-                          {bio || "Your bio will appear here..."}
+                      <div className="text-center w-full z-10 mb-6 space-y-1">
+                        <h1 className="text-xl font-bold tracking-tight">
+                           {bioModalOpen ? (tempUsername || 'username') : (username || 'username')}
+                        </h1>
+                        {(bioModalOpen ? (tempJobTitle || tempCompany) : (jobTitle || company)) && (
+                          <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400">
+                             {bioModalOpen ? tempJobTitle : jobTitle} {bioModalOpen && tempJobTitle && tempCompany ? '@' : ''} {bioModalOpen ? tempCompany : company}
+                          </p>
+                        )}
+                        <p className="text-sm opacity-80 leading-relaxed line-clamp-3 px-4">
+                          {bioModalOpen ? (tempBio || "Tell the world about yourself...") : (bio || "Your bio will appear here...")}
                         </p>
                       </div>
+
+                      {/* Professional Contact Card */}
+                       {/* Professional Contact Card */}
+                      {(() => {
+                        const hasPhone = bioModalOpen ? tempPhone : phone;
+                        const hasEmail = bioModalOpen ? tempProfessionalEmail : professionalEmail;
+                        const hasLocation = bioModalOpen ? tempLocation : userLocation;
+                        const previewLinks = links; 
+                        const hasBooking = previewLinks.some(l => l.isActive !== false && (l.url.includes('calendly.com') || l.url.includes('calendar.google.com') || l.url.includes('tidycal.com')));
+
+                        if (!hasPhone && !hasEmail && !hasLocation) return null;
+
+                        return (
+                        <div className={`w-full grid grid-cols-${(hasPhone ? 1 : 0) + (hasEmail ? 1 : 0) + (hasLocation ? 1 : 0) + (hasBooking ? 1 : 0) > 3 ? 4 : 3} gap-2 mb-6 z-10 px-2`}>
+                           {hasPhone && (
+                             <div className="flex flex-col items-center p-2 rounded-xl bg-white/5 border border-white/5">
+                                <Phone size={14} className="mb-1 opacity-50" />
+                                <span className="text-[8px] font-bold uppercase opacity-40">Call</span>
+                             </div>
+                           )}
+                           {hasEmail && (
+                             <div className="flex flex-col items-center p-2 rounded-xl bg-white/5 border border-white/5">
+                                <Mail size={14} className="mb-1 opacity-50" />
+                                <span className="text-[8px] font-bold uppercase opacity-40">Email</span>
+                             </div>
+                           )}
+                           {hasLocation && (
+                             <div className="flex flex-col items-center p-2 rounded-xl bg-white/5 border border-white/5">
+                                <MapPin size={14} className="mb-1 opacity-50" />
+                                <span className="text-[8px] font-bold uppercase opacity-40">Office</span>
+                             </div>
+                           )}
+                           {hasBooking && (
+                             <div className="flex flex-col items-center p-2 rounded-xl bg-white/5 border border-white/5">
+                                <Calendar size={14} className="mb-1 opacity-50" />
+                                <span className="text-[8px] font-bold uppercase opacity-40">Book</span>
+                             </div>
+                           )}
+                        </div>
+                        );
+                      })()}
+
+                      {/* Add to Contacts Button */}
+                      {(bioModalOpen ? (tempPhone || tempProfessionalEmail) : (phone || professionalEmail)) && (
+                        <button 
+                          onClick={generateVCard}
+                          className="w-full mb-8 py-3 rounded-2xl bg-white text-black font-black text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all z-10 relative overflow-hidden group"
+                        >
+                           <User size={14} /> Add to Contacts
+                           <div className="absolute top-0 right-0 bg-indigo-600 text-[8px] text-white px-2 py-0.5 rounded-bl-lg font-black tracking-tighter">PRO</div>
+                           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                        </button>
+                      )}
 
                       {/* Preview AMA */}
                       {amaEnabled && (
@@ -820,28 +927,32 @@ useEffect(() => {
                            <div className="w-full py-4 text-center opacity-50 border border-dashed border-current rounded-xl">No active links</div>
                         ) : (
                            links.filter(isLinkVisible).map((link) => {
-                             const Icon = iconMap[link.iconType] || LinkIcon;
+                             const isBooking = link.url.includes('calendly.com') || link.url.includes('calendar.google.com') || link.url.includes('tidycal.com');
+                             const Icon = isBooking ? Calendar : (iconMap[link.iconType] || LinkIcon);
                              const isTrending = link.clicks >= maxClicks && maxClicks > 0;
                              return (
                                <div
                                 key={link.id}
                                 className={`relative flex items-center justify-between px-4 py-3.5 rounded-xl shadow-sm transition-all w-full text-left font-medium ${link.isFeatured ? 'animate-pulse scale-[1.02] ring-2 ring-white/20' : ''}`}
                                 style={{
-                                  backgroundColor: safeCustomTheme.primaryColor,
-                                  color: safeCustomTheme.backgroundColor === "#ffffff" ? "#000000" : "#ffffff",
+                                  backgroundColor: isBooking ? safeCustomTheme.secondaryColor : safeCustomTheme.primaryColor,
+                                  color: safeCustomTheme.textColor,
                                   opacity: 0.9,
-                                  border: link.isFeatured ? `2px solid ${safeCustomTheme.secondaryColor}` : 'none'
+                                  border: (link.isFeatured || isBooking) ? `2px solid ${safeCustomTheme.secondaryColor}` : 'none'
                                 }}
                               >
                                 <span className="flex items-center gap-3">
-                                  {link.iconType === "custom" ? (
+                                  {link.iconType === "custom" && !isBooking ? (
                                     <img src={link.iconUrl} alt="" className="w-4 h-4 rounded-full object-cover shrink-0" />
                                   ) : (
                                     <Icon className="w-4 h-4 shrink-0" />
                                   )}
                                   <span className="truncate max-w-[150px]">{link.title}</span>
                                 </span>
-                                {isTrending && <Zap className="w-3 h-3 animate-bounce" />}
+                                {isBooking && (
+                                   <div className="absolute top-0 right-0 bg-indigo-600 text-[8px] text-white px-2 py-0.5 rounded-bl-lg font-black tracking-tighter shadow-sm">BOOKING</div>
+                                )}
+                                {isTrending && !isBooking && <Zap className="w-3 h-3 animate-bounce" />}
                               </div>
                              );
                            })
@@ -1025,20 +1136,112 @@ useEffect(() => {
                 <textarea
                   value={tempBio}
                   onChange={(e) => setTempBio(e.target.value)}
-                  className="w-full p-4 rounded-xl bg-neutral-800 text-white placeholder:text-neutral-400 focus:ring-2 focus:ring-indigo-500 outline-none border border-white/5 transition-all min-h-[120px]"
+                  className="w-full p-4 rounded-xl bg-neutral-800 text-white placeholder:text-neutral-400 focus:ring-2 focus:ring-indigo-500 outline-none border border-white/5 transition-all min-h-[100px]"
                   placeholder="Tell the world about yourself..."
                 />
               </div>
+
+              {/* Professional Kit Section */}
+              <div className="pt-4 border-t border-white/5 space-y-4">
+                <div className="flex items-center justify-between mb-2">
+                   <div className="flex items-center gap-2">
+                       <Briefcase size={14} className="text-indigo-400" />
+                       <h3 className="text-xs font-black uppercase tracking-[0.2em] text-neutral-400">Professional Kit</h3>
+                   </div>
+                   <div className="group relative">
+                      <span className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded cursor-help">PRO</span>
+                      <div className="absolute right-0 bottom-full mb-2 w-64 bg-black border border-white/10 p-3 rounded-xl shadow-xl text-left hidden group-hover:block z-50">
+                        <p className="text-[10px] text-neutral-400 leading-relaxed mb-2">
+                           Turn your profile into a lead magnet. This kit adds:
+                        </p>
+                        <ul className="text-[10px] text-white space-y-1 list-disc pl-3">
+                           <li><span className="font-bold">Contact Bar:</span> Call, Email & Map buttons.</li>
+                           <li><span className="font-bold">V-Card:</span> "Add to Contacts" download.</li>
+                           <li><span className="font-bold">Smart Booking:</span> Promotes Calendly links.</li>
+                        </ul>
+                      </div>
+                   </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] uppercase font-bold text-neutral-500 ml-1">Job Title</label>
+                    <input
+                      type="text"
+                      value={tempJobTitle}
+                      onChange={(e) => setTempJobTitle(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl bg-neutral-800 text-white text-sm border border-white/5 outline-none focus:ring-1 focus:ring-indigo-500"
+                      placeholder="CEO"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] uppercase font-bold text-neutral-500 ml-1">Company</label>
+                    <input
+                      type="text"
+                      value={tempCompany}
+                      onChange={(e) => setTempCompany(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl bg-neutral-800 text-white text-sm border border-white/5 outline-none focus:ring-1 focus:ring-indigo-500"
+                      placeholder="Acme Inc."
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-bold text-neutral-500 ml-1">Professional Email</label>
+                  <div className="relative">
+                    <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                    <input
+                      type="email"
+                      value={tempProfessionalEmail}
+                      onChange={(e) => setTempProfessionalEmail(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-neutral-800 text-white text-sm border border-white/5 outline-none focus:ring-1 focus:ring-indigo-500"
+                      placeholder="hello@company.com"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-bold text-neutral-500 ml-1">Phone Number</label>
+                  <div className="relative">
+                    <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                    <input
+                      type="tel"
+                      value={tempPhone}
+                      onChange={(e) => setTempPhone(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-neutral-800 text-white text-sm border border-white/5 outline-none focus:ring-1 focus:ring-indigo-500"
+                      placeholder="+1 234 567 890"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-bold text-neutral-500 ml-1">Office Location</label>
+                  <div className="relative">
+                    <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                    <input
+                      type="text"
+                      value={tempLocation}
+                      onChange={(e) => setTempLocation(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-neutral-800 text-white text-sm border border-white/5 outline-none focus:ring-1 focus:ring-indigo-500"
+                      placeholder="New York, NY"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
-            {/* Removed toggle from here as it's now in the Inbox modal */}
 
             <button
                onClick={async () => {
                 await handleSaveProfile({ 
                   bio: tempBio,
-                  username: tempUsername 
-                }); // save to Firestore
-                setBioModalOpen(false); // close modal
+                  username: tempUsername,
+                  phone: tempPhone,
+                  professionalEmail: tempProfessionalEmail,
+                  jobTitle: tempJobTitle,
+                  company: tempCompany,
+                  location: tempLocation
+                });
+                setBioModalOpen(false);
               }} 
               disabled={bioLoading}
               className={`w-full font-black py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95 ${
@@ -1479,15 +1682,17 @@ useEffect(() => {
                     </div>
 
                     {/* Username & Bio */}
-                    <div className="text-center w-full z-10 mb-6">
-                      <div className="inline-block px-3 py-1 rounded-full text-xs font-bold mb-2 shadow-sm" style={{ backgroundColor: safeCustomTheme.primaryColor + '30', color: safeCustomTheme.primaryColor }}>
-                         @{bioModalOpen ? (tempUsername || 'username') : (username || 'username')}
-                      </div>
-                      <h1 className="text-xl font-bold mb-1 tracking-tight" style={{ color: safeCustomTheme.textColor }}>
-                         {bio ? "My Links" : "Welcome"}
+                    <div className="text-center w-full z-10 mb-6 space-y-1">
+                      <h1 className="text-xl font-bold tracking-tight">
+                         {bioModalOpen ? (tempUsername || 'username') : (username || 'username')}
                       </h1>
-                       <p className="text-sm opacity-80 px-2 line-clamp-3 leading-relaxed" style={{ color: safeCustomTheme.textColor }}>
-                        {bioModalOpen ? (tempBio || "Tell the world about yourself...") : (bio || "This is a preview of your bio. It looks great!")}
+                      {(bioModalOpen ? (tempJobTitle || tempCompany) : (jobTitle || company)) && (
+                        <p className="text-[10px] font-black uppercase tracking-widest text-[#6366f1]" style={{ color: safeCustomTheme.primaryColor }}>
+                           {bioModalOpen ? tempJobTitle : jobTitle} {bioModalOpen && tempJobTitle && tempCompany ? '@' : ''} {bioModalOpen ? tempCompany : company}
+                        </p>
+                      )}
+                      <p className="text-sm opacity-80 leading-relaxed line-clamp-3 px-4">
+                        {bioModalOpen ? (tempBio || "Tell the world about yourself...") : (bio || "Your bio will appear here...")}
                       </p>
                     </div>
 
@@ -1503,7 +1708,7 @@ useEffect(() => {
                             className="relative flex items-center justify-between px-4 py-3.5 rounded-xl shadow-md transition-all duration-300 w-full text-left font-medium active:scale-95 hover:-translate-y-0.5"
                             style={{
                               background: safeCustomTheme.primaryColor,
-                              color: safeCustomTheme.backgroundColor === "#ffffff" ? "#000000" : "#ffffff", // Dynamic contrast for buttons
+                              color: safeCustomTheme.textColor, // Using selected Text Color for links
                               border: `1px solid ${safeCustomTheme.secondaryColor}40`
                             }}
                         >

@@ -12,6 +12,12 @@ import {
   Link as LinkIcon,
   Share,
   EllipsisVertical,
+  Phone,
+  Mail,
+  MapPin,
+  Briefcase,
+  User,
+  Calendar
 } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import { useAlert } from "../contexts/AlertContext";
@@ -38,16 +44,32 @@ const UserProfile = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { showAlert } = useAlert();
-  const links = location.state?.links || [];
-  const quickLinks = links.slice(0, 3);
-  const bio = location.state?.bio || "Welcome to my links page 🚀";
-  const profilePic = location.state?.profilePic || null;
-  const theme = location.state?.theme || {
-    primaryColor: "#2563eb",   // blue-600 (good for buttons/links)
-    secondaryColor: "#10b981", // green-500 (for highlights)
-    backgroundColor: "#f3f4f6", // gray-100 (light background for readability)
-    textColor: "#111827",       // gray-900 (dark text, high contrast)
-    fontFamily: "'Inter', sans-serif"
+  const phone = location.state?.phone || "";
+  const professionalEmail = location.state?.professionalEmail || "";
+  const jobTitle = location.state?.jobTitle || "";
+  const company = location.state?.company || "";
+  const userLocation = location.state?.location || "";
+  
+  const generateVCard = () => {
+    const vcard = `BEGIN:VCARD
+VERSION:3.0
+FN:${username}
+TITLE:${jobTitle}
+ORG:${company}
+TEL;TYPE=CELL:${phone}
+EMAIL;TYPE=WORK:${professionalEmail}
+ADR;TYPE=WORK:;;${userLocation};;;;
+END:VCARD`;
+    
+    const blob = new Blob([vcard], { type: "text/vcard" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `${username}.vcf`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showAlert("Contact saved!", "success");
   };
   
   // Add Google Fonts for the playful/cartoon fonts
@@ -209,6 +231,13 @@ const UserProfile = () => {
         {username}
       </h1>
 
+      {/* Professional Title/Company */}
+      {(jobTitle || company) && (
+        <p className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-[#6366f1] -mt-2" style={{ color: theme.primaryColor }}>
+           {jobTitle} {jobTitle && company ? '@' : ''} {company}
+        </p>
+      )}
+
       {/* Bio */}
       <p
         className="text-center text-xs sm:text-base mb-2 px-1 sm:px-2"
@@ -216,6 +245,41 @@ const UserProfile = () => {
       >
         {bio}
       </p>
+
+      {/* Professional Contact Actions */}
+      {(phone || professionalEmail || userLocation) && (
+        <div className="w-full grid grid-cols-3 gap-2 mb-2 px-2">
+           {phone && (
+             <div className="flex flex-col items-center p-2 rounded-xl bg-gray-50 border border-gray-100">
+                <Phone size={14} className="mb-1 opacity-50" />
+                <span className="text-[8px] font-bold uppercase opacity-40">Call</span>
+             </div>
+           )}
+           {professionalEmail && (
+             <div className="flex flex-col items-center p-2 rounded-xl bg-gray-50 border border-gray-100">
+                <Mail size={14} className="mb-1 opacity-50" />
+                <span className="text-[8px] font-bold uppercase opacity-40">Email</span>
+             </div>
+           )}
+           {userLocation && (
+             <div className="flex flex-col items-center p-2 rounded-xl bg-gray-50 border border-gray-100">
+                <MapPin size={14} className="mb-1 opacity-50" />
+                <span className="text-[8px] font-bold uppercase opacity-40">Office</span>
+             </div>
+           )}
+        </div>
+      )}
+
+      {/* Add to Contacts Button */}
+      {(phone || professionalEmail) && (
+        <button 
+          onClick={generateVCard}
+          className="w-full mb-4 py-3 rounded-full bg-white text-black font-black text-[10px] sm:text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all z-10 relative overflow-hidden group border border-gray-200"
+        >
+           <User size={14} /> Add to Contacts
+           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-black/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+        </button>
+      )}
 
       {/* Quick Links */}
       <div className="flex flex-wrap gap-2 sm:gap-3 justify-center mb-3">
@@ -265,6 +329,8 @@ const UserProfile = () => {
                 }).map((link) => {
                   const isNew = link.createdAt && (new Date() - (link.createdAt.toDate ? link.createdAt.toDate() : new Date(link.createdAt))) < 48 * 60 * 60 * 1000;
                   const isTrending = topLink && link.clicks >= topLink.clicks && topLink.clicks > 0;
+                  const isBooking = link.url.includes('calendly.com') || link.url.includes('calendar.google.com') || link.url.includes('tidycal.com');
+                  const IconComponent = isBooking ? Calendar : (iconMap[link.iconType] || LinkIcon);
                   
                   return (
                     <button
@@ -274,34 +340,32 @@ const UserProfile = () => {
                         link.id === topLink?.id
                           ? "ring-2 ring-yellow-400 bg-yellow-100"
                           : ""
-                      } ${link.isFeatured ? 'spotlight-link scale-[1.02] z-10' : ''}`}
+                      } ${link.isFeatured || isBooking ? 'spotlight-link scale-[1.02] z-10' : ''}`}
                       style={{
-                        background: link.id === topLink?.id ? "#fef08a" : theme.primaryColor,
-                        color: link.id === topLink?.id ? "#92400e" : theme.backgroundColor,
+                        background: isBooking ? theme.secondaryColor : (link.id === topLink?.id ? "#fef08a" : theme.primaryColor),
+                        color: link.id === topLink?.id ? "#92400e" : theme.textColor,
                         fontFamily: theme.fontFamily,
                         textDecoration: "none",
-                        border: link.isFeatured ? `2px solid ${theme.secondaryColor}` : 'none'
+                        border: (link.isFeatured || isBooking) ? `2px solid ${theme.secondaryColor}` : 'none'
                       }}
                     >
                       <div className="shrink-0 flex items-center justify-center overflow-hidden">
-                        {link.iconType === "custom" ? (
+                        {link.iconType === "custom" && !isBooking ? (
                           <img src={link.iconUrl} alt="" className="w-3 h-3 sm:w-5 sm:h-5 rounded-full object-cover" />
                         ) : (
-                          (() => {
-                            const Icon = iconMap[link.iconType] || LinkIcon;
-                            return <Icon className="w-3 h-3 sm:w-5 sm:h-5" />;
-                          })()
+                          <IconComponent className="w-3 h-3 sm:w-5 sm:h-5" />
                         )}
                       </div>
                       <span className="truncate">{link.title}</span>
                       {isNew && <span className="text-[8px] sm:text-[10px] bg-white/20 px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider ml-2">New</span>}
+                      {isBooking && <span className="text-[8px] sm:text-[10px] bg-black/20 px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider ml-2">Booking</span>}
                       
-                      {typeof link.clicks === "number" && (
+                      {typeof link.clicks === "number" && !isBooking && (
                         <span className="ml-auto text-[10px] sm:text-sm opacity-70">
                           {link.clicks} clicks
                         </span>
                       )}
-                      {isTrending && (
+                      {isTrending && !isBooking && (
                         <span className="ml-1 px-1 py-0.5 bg-yellow-400 text-yellow-900 rounded text-[10px] sm:text-xs font-semibold">
                           HOT
                         </span>

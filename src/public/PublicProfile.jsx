@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { FaDiscord, FaPinterest, FaReddit, FaSnapchat, FaTelegram, FaTiktok, FaWhatsapp } from "react-icons/fa";
-import { Instagram, Youtube, Twitter, Facebook, Github, Link as LinkIcon, Share, CheckCircle, AlertCircle, MessageSquare, Send, ArrowLeft } from "lucide-react";
+import { Instagram, Youtube, Twitter, Facebook, Github, Link as LinkIcon, Share, CheckCircle, AlertCircle, MessageSquare, Send, ArrowLeft, Phone, Mail, MapPin, Briefcase, Calendar, User } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { sendMessageToUser } from "../firebase/DashboardMessages";
@@ -95,6 +95,11 @@ const PublicProfile = () => {
             links: userLinks || [],
             bio: userData.bio || "Welcome to my links page 🚀",
             amaEnabled: userData.amaEnabled !== undefined ? userData.amaEnabled : true,
+            phone: userData.phone || "",
+            professionalEmail: userData.professionalEmail || "",
+            jobTitle: userData.jobTitle || "",
+            company: userData.company || "",
+            location: userData.location || "",
             profilePic: userData.photoURL || null,
             theme: userData.customTheme || {
               primaryColor: "#6366f1", // Indigo
@@ -189,7 +194,31 @@ const PublicProfile = () => {
     );
   }
 
-  const { links, bio, profilePic, theme } = profileData;
+  const { links, bio, profilePic, theme, phone, professionalEmail, jobTitle, company, location: userLocation } = profileData;
+  
+  const generateVCard = () => {
+    const vcard = `BEGIN:VCARD
+VERSION:3.0
+FN:${username}
+TITLE:${jobTitle}
+ORG:${company}
+TEL;TYPE=CELL:${phone}
+EMAIL;TYPE=WORK:${professionalEmail}
+ADR;TYPE=WORK:;;${userLocation};;;;
+END:VCARD`;
+    
+    const blob = new Blob([vcard], { type: "text/vcard" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `${username}.vcf`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showAlert("Contact saved!", "success");
+  };
+
+  const bookingLink = links.find(l => l.isActive !== false && (l.url.includes('calendly.com') || l.url.includes('calendar.google.com') || l.url.includes('tidycal.com')));
   const quickLinks = links.slice(0, 3);
 
   const categories = [...new Set(localLinks.map(link => link.category || "None"))];
@@ -338,12 +367,58 @@ const PublicProfile = () => {
             </div>
 
             {/* Username & Bio */}
-            <div className="text-center w-full z-10 mb-8 space-y-2">
+            <div className="text-center w-full z-10 mb-6 space-y-1">
               <h1 className="text-2xl font-bold tracking-tight">@{username}</h1>
+              {(jobTitle || company) && (
+                <p className="text-xs font-black uppercase tracking-widest text-[#6366f1]" style={{ color: theme.primaryColor }}>
+                   {jobTitle} {jobTitle && company ? '@' : ''} {company}
+                </p>
+              )}
               <p className="text-base opacity-80 leading-relaxed max-w-sm mx-auto px-4">
                 {bio}
               </p>
             </div>
+
+            {/* Professional Contact Actions */}
+            {(phone || professionalEmail || userLocation) && (
+              <div className="w-full grid grid-cols-3 gap-3 mb-6 z-10 px-4">
+                 {phone && (
+                   <a href={`tel:${phone}`} className="flex flex-col items-center p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
+                      <Phone size={18} className="mb-1 opacity-60" />
+                      <span className="text-[10px] font-bold uppercase opacity-50 tracking-white">Call</span>
+                   </a>
+                 )}
+                 {professionalEmail && (
+                   <a href={`mailto:${professionalEmail}`} className="flex flex-col items-center p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
+                      <Mail size={18} className="mb-1 opacity-60" />
+                      <span className="text-[10px] font-bold uppercase opacity-50 tracking-white">Email</span>
+                   </a>
+                 )}
+                 {userLocation && (
+                   <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(userLocation)}`} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
+                      <MapPin size={18} className="mb-1 opacity-60" />
+                      <span className="text-[10px] font-bold uppercase opacity-50 tracking-white">Office</span>
+                   </a>
+                 )}
+                 {bookingLink && (
+                   <a href={bookingLink.url} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
+                      <Calendar size={18} className="mb-1 opacity-60" />
+                      <span className="text-[10px] font-bold uppercase opacity-50 tracking-white">Book</span>
+                   </a>
+                 )}
+              </div>
+            )}
+
+            {/* Add to Contacts Button */}
+            {(phone || professionalEmail) && (
+              <button 
+                onClick={generateVCard}
+                className="w-full max-w-sm mb-8 py-3.5 rounded-2xl bg-white text-black font-black text-sm uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all z-10 relative overflow-hidden group mx-4"
+              >
+                 <User size={16} /> Add to Contacts
+                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+              </button>
+            )}
 
              {/* AMA / Message Box */}
              {profileData?.amaEnabled !== false && (
@@ -398,32 +473,32 @@ const PublicProfile = () => {
                 }).map((link) => {
                    const isNew = link.createdAt && (new Date() - (link.createdAt.toDate ? link.createdAt.toDate() : new Date(link.createdAt))) < 48 * 60 * 60 * 1000;
                    const isTrending = topLink && link.clicks >= topLink.clicks && topLink.clicks > 0;
+                   const isBooking = link.url.includes('calendly.com') || link.url.includes('calendar.google.com') || link.url.includes('tidycal.com');
+                   const IconComponent = isBooking ? Calendar : (iconMap[link.iconType] || LinkIcon);
                    
                    return (
                      <div
                       key={link.id}
                       onClick={() => handleLinkClick(link.id, link.url)}
-                      className={`relative flex items-center justify-between px-5 py-4 rounded-xl shadow-sm transition-all w-full text-left font-medium cursor-pointer hover:scale-[1.02] active:scale-[0.98] ${link.isFeatured ? 'spotlight-link scale-[1.02] z-10' : ''}`}
+                      className={`relative flex items-center justify-between px-5 py-4 rounded-xl shadow-sm transition-all w-full text-left font-medium cursor-pointer hover:scale-[1.02] active:scale-[0.98] ${link.isFeatured || isBooking ? 'spotlight-link scale-[1.02] z-10' : ''}`}
                       style={{
-                        backgroundColor: theme.primaryColor,
-                        color: theme.backgroundColor === "#ffffff" ? "#000000" : "#ffffff",
+                        backgroundColor: isBooking ? theme.secondaryColor : theme.primaryColor,
+                        color: theme.textColor,
                         opacity: 0.95,
-                        border: link.isFeatured ? `2px solid ${theme.secondaryColor}` : 'none'
+                        border: (link.isFeatured || isBooking) ? `2px solid ${theme.secondaryColor}` : 'none'
                       }}
                     >
                       <span className="flex items-center gap-4 min-w-0">
-                        {link.iconType === "custom" ? (
+                        {link.iconType === "custom" && !isBooking ? (
                           <img src={link.iconUrl} alt="" className="w-5 h-5 rounded-full object-cover shrink-0" />
                         ) : (
-                          (() => {
-                            const Icon = iconMap[link.iconType] || LinkIcon;
-                            return <Icon className="w-5 h-5 shrink-0" />;
-                          })()
+                          <IconComponent className="w-5 h-5 shrink-0" />
                         )}
                         <span className="truncate">{link.title}</span>
                         {isNew && <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider">New</span>}
                       </span>
-                      {isTrending && <span className="flex items-center gap-1 text-[10px] font-bold uppercase py-1 px-2 bg-black/20 rounded-lg">🔥 HOT</span>}
+                      {isBooking && <span className="text-[9px] font-black bg-black/20 px-1.5 py-0.5 rounded uppercase tracking-tighter">Booking</span>}
+                      {isTrending && !isBooking && <span className="flex items-center gap-1 text-[10px] font-bold uppercase py-1 px-2 bg-black/20 rounded-lg">🔥 HOT</span>}
                     </div>
                    );
                  })
