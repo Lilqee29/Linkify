@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/authContext";
-import { PlusCircle, Eye, Edit2, Trash2, X, User, Image as ImageIcon, Palette, Pi, Share, MessageSquare, Trash, BarChart3, Sparkles, Zap, Clock, Calendar, Send, Activity, Camera, CheckCircle2, ArrowRight, MousePointer2, MoveRight } from "lucide-react";
+import { PlusCircle, Eye, Edit2, Trash2, X, User, Image as ImageIcon, Palette, Pi, Share, MessageSquare, Trash, BarChart3, Sparkles, Zap, Clock, Calendar, Send, Activity, Camera } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import DashboardNavbar from "./DashboardNavbar";
 import { useNavigate, useLocation } from "react-router-dom";
-import confetti from 'canvas-confetti';
 import { useDashboardLinks } from "../../firebase/Dashboardlink";
 import { useDashboardProfile } from "../../firebase/Dashboardbio";
 import { useDashboardProfilePic } from "../../firebase/DashboardprofilePic";
@@ -258,105 +257,6 @@ const saveProfilePic = async () => {
       }
     }
   }, [location]);
-
-  // ------------------- Onboarding Checklist Logic -------------------
-  const [skippedSteps, setSkippedSteps] = useState(() => {
-    const saved = localStorage.getItem('linkify_skipped_steps');
-    return saved ? JSON.parse(saved) : [];
-  });
-  
-  const [checklistDismissed, setChecklistDismissed] = useState(() => {
-    return localStorage.getItem('linkify_checklist_dismissed') === 'true';
-  });
-
-  const handleSkipStep = (e, stepId) => {
-    e.stopPropagation();
-    const newSkipped = [...skippedSteps, stepId];
-    setSkippedSteps(newSkipped);
-    localStorage.setItem('linkify_skipped_steps', JSON.stringify(newSkipped));
-  };
-
-  const handleDismissChecklist = () => {
-    setChecklistDismissed(true);
-    localStorage.setItem('linkify_checklist_dismissed', 'true');
-  };
-
-  const onboardingSteps = [
-    { 
-      id: "identity", 
-      label: "Set photo & username", 
-      done: !!profilePic && !!username && username !== "User" && !username.includes("@") && username.length > 2,
-      skipped: skippedSteps.includes('identity'),
-      action: () => setBioModalOpen(true),
-      canSkip: true
-    },
-    { 
-      id: "first_link", 
-      label: "Add your first link", 
-      done: links.length > 0,
-      skipped: false,
-      action: () => handleAddLink(),
-      canSkip: false
-    },
-    { 
-      id: "theme", 
-      label: "Customize your style", 
-      done: currentTheme !== 'default' || (customTheme && Object.keys(customTheme).length > 0),
-      skipped: skippedSteps.includes('theme'),
-      action: () => setThemeModalOpen(true),
-      canSkip: true
-    }
-  ];
-
-  const effectiveDoneCount = onboardingSteps.filter(s => s.done || s.skipped).length;
-  const progress = Math.round((effectiveDoneCount / onboardingSteps.length) * 100);
-  const [hasCelebrated, setHasCelebrated] = useState(false);
-
-  useEffect(() => {
-    if (progress === 100 && !hasCelebrated && links.length > 0) {
-      confetti({
-        particleCount: 150,
-        spread: 70,
-        origin: { y: 0.6, x: 0.5 },
-        colors: ['#6366f1', '#a855f7', '#ec4899', '#f59e0b']
-      });
-      setHasCelebrated(true);
-      localStorage.setItem('linkify_setup_complete', 'true');
-      showAlert("Setup complete! Your profile is ready for the world. 🚀", "success");
-    }
-  }, [progress, hasCelebrated, links.length]);
-
-  // ------------------- Spotlight Logic -------------------
-  const [activeSpotlight, setActiveSpotlight] = useState(null);
-  const isAnyModalOpen = modalOpen || bioModalOpen || themeModalOpen || analyticsModalOpen || onboardingOpen || messagesModalOpen || profilePicModalOpen;
-
-  useEffect(() => {
-    // Only show spotlights to new users who haven't finished setup
-    const hasCompletedOnboarding = localStorage.getItem('linkify_setup_complete') === 'true';
-    const isSpotlightDismissed = localStorage.getItem('linkify_spotlight_dismissed') === 'true';
-    
-    if (progress < 100 && !hasCompletedOnboarding && !checklistDismissed && !isSpotlightDismissed && !isAnyModalOpen) {
-      if (links.length === 0) {
-        setActiveSpotlight('add-link');
-      } else if (currentTheme === 'default' && (!customTheme || Object.keys(customTheme).length === 0) && !skippedSteps.includes('theme')) {
-        setActiveSpotlight('theme');
-      } else if (progress >= 66 && links.length > 0) {
-        setActiveSpotlight('preview');
-      } else {
-        setActiveSpotlight(null);
-      }
-    } else if (progress === 100 && !localStorage.getItem('preview_seen') && !isAnyModalOpen) {
-        // One last spotlight for preview if they're 100% but haven't explored
-        setActiveSpotlight('preview');
-    } else {
-      setActiveSpotlight(null);
-    }
-  }, [progress, links.length, currentTheme, customTheme, checklistDismissed, skippedSteps, isAnyModalOpen]);
-
-  const handleDismissSpotlight = () => {
-    setActiveSpotlight(null);
-    localStorage.setItem('linkify_spotlight_dismissed', 'true');
-  };
 
   // Analytics calculations
   const totalClicks = links.reduce((sum, link) => sum + (link.clicks || 0), 0);
@@ -646,56 +546,6 @@ useEffect(() => {
         <title>Editor | Linkify</title>
       </Helmet>
 
-      {/* Spotlight Backdrop */}
-      {activeSpotlight && !isAnyModalOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[45] pointer-events-auto flex flex-col items-center justify-center">
-           {/* Instructions overlay */}
-           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center space-y-6 max-w-sm px-6 pointer-events-none flex flex-col items-center">
-              <div className="bg-indigo-600 text-white p-8 rounded-[2.5rem] shadow-[0_20px_50px_rgba(79,70,229,0.5)] border border-white/20 backdrop-blur-md relative">
-                 <div className="absolute -top-4 -left-4 bg-yellow-400 text-black p-2 rounded-xl rotate-12 shadow-lg">
-                    <Sparkles size={20} fill="currentColor" />
-                 </div>
-                 
-                 <p className="text-sm font-black tracking-[0.2em] mb-3 uppercase opacity-70">Guided Setup</p>
-                 <h2 className="text-2xl font-black mb-4 leading-tight">
-                    {activeSpotlight === 'add-link' && "Add your very first link!"}
-                    {activeSpotlight === 'theme' && "Personalize your page!"}
-                    {activeSpotlight === 'preview' && "Your page is LIVE!"}
-                 </h2>
-                 <p className="text-sm font-medium opacity-90 leading-relaxed mb-6">
-                   {activeSpotlight === 'add-link' && "This is where the magic happens. Paste your Instagram, TikTok, or Website."}
-                   {activeSpotlight === 'theme' && "Make it look professional. Pick a theme or create your own custom colors."}
-                   {activeSpotlight === 'preview' && "Check out how your profile looks to the rest of the world right here."}
-                 </p>
-                 
-                 {/* Visual Cues */}
-                 <div className="flex items-center justify-center gap-3 py-2 px-4 bg-white/10 rounded-2xl border border-white/5 animate-pulse">
-                    <MousePointer2 size={16} className="text-yellow-400" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">
-                       {activeSpotlight === 'preview' ? "Look to the right!" : "Click the highlighted button"}
-                    </span>
-                 </div>
-              </div>
-
-              {/* Central Arrow for Desktop Preview */}
-              {activeSpotlight === 'preview' && (
-                <div className="hidden lg:flex items-center gap-4 animate-bounce-subtle mt-8">
-                   <div className="text-white font-black text-xl">VIEW PREVIEW</div>
-                   <MoveRight size={40} className="text-indigo-400" />
-                </div>
-              )}
-           </div>
-
-           {/* Dismiss Button */}
-           <button 
-             onClick={handleDismissSpotlight}
-             className="absolute bottom-12 left-1/2 -translate-x-1/2 px-6 py-2.5 bg-white/10 hover:bg-white/20 text-white/50 hover:text-white rounded-full text-xs font-bold uppercase tracking-widest transition-all border border-white/5 backdrop-blur-md"
-           >
-             I'll do this later
-           </button>
-        </div>
-      )}
-
       {/* Navbar with subtle translucency */}
       <div className="sticky top-0 z-50 backdrop-blur-xl bg-black/50 border-b border-white/5">
          <DashboardNavbar />
@@ -714,102 +564,21 @@ useEffect(() => {
               <p className="text-neutral-400">Manage your links and appearance.</p>
             </div>
 
-             {/* Guided Onboarding Checklist */}
-             {progress < 100 && !checklistDismissed && (
-               <div className="bg-neutral-900/50 border border-white/5 rounded-3xl p-6 space-y-4 relative overflow-hidden group/checklist">
-                 {/* Dismiss Button */}
-                 <button 
-                   onClick={handleDismissChecklist}
-                   className="absolute top-4 right-4 p-1.5 hover:bg-white/10 rounded-lg text-neutral-500 hover:text-white transition-all opacity-0 group-hover/checklist:opacity-100"
-                   title="Hide Checklist"
-                 >
-                   <X size={16} />
-                 </button>
-
-                 <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                   <div className="space-y-1">
-                     <h3 className="text-lg font-bold flex items-center gap-2">
-                        Set up your Linkify <span className="text-sm font-normal text-neutral-500">({progress}%)</span>
-                     </h3>
-                     <p className="text-xs text-neutral-400">Complete these steps to unlock your live profile.</p>
-                   </div>
-                   <div className="w-12 h-12 rounded-full border-4 border-neutral-800 flex items-center justify-center relative">
-                     <svg className="absolute inset-0 w-full h-full -rotate-90">
-                       <circle
-                         cx="24"
-                         cy="24"
-                         r="20"
-                         fill="transparent"
-                         stroke="currentColor"
-                         strokeWidth="4"
-                         className="text-indigo-600 transition-all duration-1000 ease-out"
-                         style={{ strokeDasharray: 125.6, strokeDashoffset: 125.6 - (125.6 * progress) / 100 }}
-                       />
-                     </svg>
-                     <span className="text-[10px] font-black">{progress}%</span>
-                   </div>
-                 </div>
-
-                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                   {onboardingSteps.map((step) => (
-                     <div key={step.id} className="relative group/step">
-                        <button
-                          onClick={step.action}
-                          disabled={step.done || step.skipped}
-                          className={`w-full flex items-center justify-between p-3.5 rounded-2xl transition-all border ${
-                            step.done 
-                              ? "bg-green-500/10 border-green-500/20 text-green-500" 
-                              : step.skipped
-                                ? "bg-neutral-800/20 border-white/5 text-neutral-500"
-                                : "bg-neutral-800/50 border-white/10 text-neutral-300 hover:border-indigo-500/50 hover:bg-neutral-800 active:scale-[0.98]"
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            {step.done ? <CheckCircle2 size={18} /> : step.skipped ? <X size={16} /> : <div className="w-4 h-4 rounded-full border-2 border-neutral-600" />}
-                            <span className="text-xs font-bold text-left leading-tight">{step.label}</span>
-                          </div>
-                          {!step.done && !step.skipped && <ArrowRight size={14} className="opacity-40" />}
-                        </button>
-                        
-                        {step.canSkip && !step.done && !step.skipped && (
-                           <button 
-                             onClick={(e) => handleSkipStep(e, step.id)}
-                             className="absolute -top-2 -right-1 bg-neutral-800 border border-white/10 text-[8px] font-black px-1.5 py-0.5 rounded-full hover:bg-neutral-700 hover:text-white transition-all opacity-0 group-hover/step:opacity-100 z-10"
-                           >
-                             SKIP
-                           </button>
-                        )}
-                     </div>
-                   ))}
-                 </div>
-               </div>
-             )}
-
-           {/* Quick Actions Grid */}
-           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <button
-                onClick={handleAddLink}
-                className={`col-span-2 py-3.5 sm:py-4 px-4 sm:px-6 rounded-2xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] transition-all font-bold shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 group relative ${activeSpotlight === 'add-link' ? 'z-[50] ring-4 ring-white shadow-[0_0_50px_rgba(99,102,241,0.8)]' : ''}`}
-              >
-                {activeSpotlight === 'add-link' && (
-                   <span className="absolute -top-12 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-[10px] font-black py-1.5 px-3 rounded-full shadow-2xl whitespace-nowrap animate-pulse">
-                     START HERE: ADD YOUR FIRST LINK 🚀
-                   </span>
-                 )}
-                 <PlusCircle className="w-5 h-5 group-hover:rotate-90 transition-transform" /> Add Link
-              </button>
-              
-              <button
-                onClick={() => setThemeModalOpen(true)}
-                                className={`py-3.5 sm:py-4 px-2 sm:px-6 rounded-2xl bg-neutral-800 hover:bg-neutral-700 active:scale-[0.98] transition-all font-semibold flex flex-col items-center justify-center gap-1 hover:text-indigo-400 relative ${activeSpotlight === 'theme' ? 'z-[50] ring-4 ring-indigo-500 shadow-[0_0_50px_rgba(99,102,241,0.5)]' : ''}`}
-              >
-                                   {activeSpotlight === 'theme' && (
-                    <span className="absolute -top-12 left-1/2 -translate-x-1/2 bg-indigo-500 text-white text-[10px] font-black py-1.5 px-3 rounded-full shadow-2xl whitespace-nowrap animate-pulse">
-                      NOW: STYLE YOUR PAGE 🎨
-                    </span>
-                  )}
-                  <Palette className="w-5 h-5" /> <span className="text-xs">Appearance</span>
-              </button>
+            {/* Quick Actions Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+               <button
+                 onClick={handleAddLink}
+                 className="col-span-2 py-3.5 sm:py-4 px-4 sm:px-6 rounded-2xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] transition-all font-bold shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 group"
+               >
+                  <PlusCircle className="w-5 h-5 group-hover:rotate-90 transition-transform" /> Add Link
+               </button>
+               
+               <button
+                 onClick={() => setThemeModalOpen(true)}
+                 className="py-3.5 sm:py-4 px-2 sm:px-6 rounded-2xl bg-neutral-800 hover:bg-neutral-700 active:scale-[0.98] transition-all font-semibold flex flex-col items-center justify-center gap-1 hover:text-indigo-400 relative"
+               >
+                   <Palette className="w-5 h-5" /> <span className="text-xs">Appearance</span>
+               </button>
 
               <button
                 onClick={handleShare}
@@ -983,24 +752,10 @@ useEffect(() => {
                  <span className="text-xs font-bold uppercase tracking-widest text-neutral-500">Live Preview</span>
               </div>
               
-              {/* Phone Mockup with Spotlight */}
+              {/* Phone Mockup */}
               <div 
-               className={`relative w-[320px] h-[640px] mx-auto border-[14px] border-neutral-900 rounded-[3rem] shadow-2xl bg-neutral-900 overflow-hidden ring-1 ring-white/10 transition-all duration-500 ${activeSpotlight === 'preview' ? 'z-[50] ring-4 ring-indigo-500 scale-[1.02] shadow-[0_0_80px_rgba(99,102,241,0.4)]' : ''}`}
-               onClick={() => {
-                 if (activeSpotlight === 'preview') {
-                   localStorage.setItem('preview_seen', 'true');
-                   setActiveSpotlight(null);
-                 }
-               }}
+               className="relative w-[320px] h-[640px] mx-auto border-[14px] border-neutral-900 rounded-[3rem] shadow-2xl bg-neutral-900 overflow-hidden ring-1 ring-white/10 transition-all duration-500"
               >
-                 {activeSpotlight === 'preview' && (
-                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full text-center z-[60] pointer-events-none px-4">
-                      <div className="bg-indigo-600 text-white p-4 rounded-2xl shadow-2xl border border-white/20 animate-bounce-subtle">
-                         <p className="text-sm font-black mb-1">BOOM! 💥</p>
-                         <p className="text-[10px] font-bold opacity-90 leading-tight">YOUR PROFILE IS READY.<br/>THIS IS HOW IT LOOKS LIVE!</p>
-                      </div>
-                   </div>
-                 )}
                  {/* Notch */}
                  <div className="absolute top-0 left-1/2 -translate-x-1/2 h-[28px] w-[120px] bg-black rounded-b-[1.2rem] z-20 flex justify-center items-center">
                     <div className="w-16 h-1.5 bg-neutral-800/50 rounded-full"></div>
